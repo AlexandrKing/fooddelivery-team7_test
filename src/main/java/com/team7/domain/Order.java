@@ -1,4 +1,4 @@
-package com.team7;
+package com.team7.domain;
 import java.util.List;
 import java.time.Instant;
 

@@ -1,7 +1,9 @@
-package com.team7;
+package com.team7.service;
 
 public interface CourierService {
-    void registerDeliver(String login, String password, String name);
+    void registerCourier(String login, String password, String name, String email);
+
+    void login(String login, String password);
 
     void start(String login, String activityStatus);
 
