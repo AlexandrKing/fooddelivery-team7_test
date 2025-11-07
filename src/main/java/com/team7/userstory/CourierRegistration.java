@@ -12,6 +12,7 @@ public class CourierRegistration implements CourierService {
 
     private final List<Courier> couriers = new ArrayList<>();
     private long currentId = 1;
+    private Courier currentCourier;
 
 
     public void registerCourier(String login, String password, String name, String email) {
@@ -64,14 +65,10 @@ public class CourierRegistration implements CourierService {
         System.out.print("Введите email: ");
         String email = scanner.nextLine();
 
-        // Вызов метода регистрации
         registerCourier(login, password, name, email);
 
         System.out.println("Курьер " + name + " успешно зарегистрирован!");
     }
-
-
-    public void login(String login, String password) {}
 
     public void start(String login, String activityStatus) {}
 
@@ -85,5 +82,75 @@ public class CourierRegistration implements CourierService {
 
     public List<Courier> getCouriers() {
         return couriers;
+    }
+
+
+    public void login(String login, String password) {
+        // Поиск курьера по логину
+        Courier courier = findCourierByLogin(login);
+
+        if (courier == null) {
+            throw new IllegalArgumentException("Курьер с логином '" + login + "' не найден");
+        }
+
+        // Проверка пароля
+        if (!courier.getPassword().equals(password)) {
+            throw new IllegalArgumentException("Неверный пароль");
+        }
+
+        // Проверка статуса аккаунта
+        if (courier.getStatus() == Courier.Status.Banned) {
+            throw new IllegalArgumentException("Аккаунт заблокирован");
+        }
+
+        // Успешная авторизация
+        currentCourier = courier;
+        System.out.println("Успешный вход! Добро пожаловать, " + courier.getName() + "!");
+    }
+
+    public void loginFromInput() {
+        Scanner scanner = new Scanner(System.in);
+
+        System.out.println("=== Вход в систему ===");
+
+        System.out.print("Введите логин: ");
+        String login = scanner.nextLine();
+
+        System.out.print("Введите пароль: ");
+        String password = scanner.nextLine();
+
+        try {
+            login(login, password);
+        } catch (IllegalArgumentException e) {
+            System.out.println("Ошибка входа: " + e.getMessage());
+        }
+    }
+
+    // Метод для выхода
+    public void logout() {
+        if (currentCourier != null) {
+            System.out.println("До свидания, " + currentCourier.getName() + "!");
+            currentCourier = null;
+        } else {
+            System.out.println("Вы не авторизованы");
+        }
+    }
+
+    public boolean isLoggedIn() {
+        return currentCourier != null;
+    }
+
+    public Courier getCurrentCourier() {
+        return currentCourier;
+    }
+
+
+    private Courier findCourierByLogin(String login) {
+        for (Courier courier : couriers) {
+            if (courier.getLogin().equals(login)) {
+                return courier;
+            }
+        }
+        return null;
     }
 }

@@ -22,6 +22,7 @@ public class CourierRegistrationWithDB {
             System.out.println("1. Зарегистрировать курьера");
             System.out.println("2. Показать всех курьеров");
             System.out.println("3. Выйти");
+            System.out.println("4. Войти в аккаунт");
             System.out.print("Выберите действие: ");
 
             int choice = scanner.nextInt();
@@ -40,6 +41,8 @@ public class CourierRegistrationWithDB {
                     running = false;
                     System.out.println("Выход из программы...");
                     break;
+                case 4:
+                    ((CourierRegistration) courierService).loginFromInput();
 
                 default:
                     System.out.println("Неверный выбор!");
