@@ -28,14 +28,32 @@ public class CourierRegistration implements CourierService {
 
         couriers.add(courier);
     }
+    private boolean isLoginExists(String login) {
+        for (Courier courier : couriers) {
+            if (courier.getLogin().equals(login)) {
+                return true;
+            }
+        }
+        return false;
+    }
 
     public void registerCourierFromInput() {
         Scanner scanner = new Scanner(System.in);
 
         System.out.println("=== Регистрация нового курьера ===");
 
-        System.out.print("Введите логин: ");
-        String login = scanner.nextLine();
+        String login;
+        boolean loginExists;
+
+        do {
+            System.out.print("Введите логин: ");
+            login = scanner.nextLine();
+
+            loginExists = isLoginExists(login);
+            if (loginExists) {
+                System.out.println("Логин '" + login + "' уже занят. Попробуйте другой логин.");
+            }
+        } while (loginExists);
 
         System.out.print("Введите пароль: ");
         String password = scanner.nextLine();
