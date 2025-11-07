@@ -1,9 +1,9 @@
-package com.team7.userstory;
+package com.team7.courieradmin.userstory;
 
-import com.team7.service.Admin;
-import com.team7.service.AdminInterface;
-import com.team7.service.Courier;
-import com.team7.service.CourierService;
+import com.team7.courieradmin.service.Admin;
+import com.team7.courieradmin.service.AdminInterface;
+import com.team7.courieradmin.service.Courier;
+import com.team7.courieradmin.service.CourierService;
 import java.util.List;
 import java.util.Scanner;
 

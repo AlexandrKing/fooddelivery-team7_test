@@ -1,6 +1,4 @@
-package com.team7.service;
-import com.team7.service.Courier;
-import com.team7.service.CourierService;
+package com.team7.courieradmin.service;
 
 import java.util.ArrayList;
 import java.util.List;

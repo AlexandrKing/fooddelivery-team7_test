@@ -1,4 +1,4 @@
-package com.team7.service;
+package com.team7.courieradmin.service;
 import java.time.Instant;
 
 

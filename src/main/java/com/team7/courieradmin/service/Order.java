@@ -1,5 +1,4 @@
-package com.team7.domain;
-import java.util.List;
+package com.team7.courieradmin.service;
 import java.time.Instant;
 
 public class Order {

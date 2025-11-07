@@ -1,4 +1,4 @@
-package com.team7.domain;
+package com.team7.courieradmin.service;
 import java.time.Instant;
 
 public class Review {
