@@ -8,7 +8,7 @@ public class Order {
     private Instant createdAt;
     private Long restaurantId;
     private Long clientLogin;
-    private List<Item> items;
+    //private List<Item> items;
     private String status;
     private Long price;
     private Long profit;

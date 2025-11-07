@@ -1,6 +1,12 @@
 package com.team7.service;
 
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+
 public interface CourierService {
+    public static List<Courier> couriers = new ArrayList<>();
     void registerCourier(String login, String password, String name, String email);
 
     void login(String login, String password);
@@ -14,4 +20,7 @@ public interface CourierService {
     void takeOrder(String login, Long orderId);
 
     void giveOrder(String login, Long orderId);
+
+    List<Courier> getCouriers();
+
 }
