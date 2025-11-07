@@ -1,8 +1,11 @@
 package com.team7.courieradmin.service;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
+
 
 public class AdminInterface {
     private final List<Courier> couriers;
