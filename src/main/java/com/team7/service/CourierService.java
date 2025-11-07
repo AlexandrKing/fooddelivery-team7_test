@@ -6,7 +6,6 @@ import java.util.Collection;
 import java.util.List;
 
 public interface CourierService {
-    public static List<Courier> couriers = new ArrayList<>();
     void registerCourier(String login, String password, String name, String email);
 
     void login(String login, String password);
@@ -21,6 +20,6 @@ public interface CourierService {
 
     void giveOrder(String login, Long orderId);
 
-    List<Courier> getCouriers();
+
 
 }

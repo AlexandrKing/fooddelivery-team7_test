@@ -2,17 +2,17 @@ package com.team7.service;
 import java.util.List;
 
 public interface AdminInterface {
-    list<Courier> getCoriers();
+    List<Courier> getCoriers();
 
-    list<Client> getClients();
+    //List<Client> getClients();
 
-    list<Restaurant> getRestaurants();
+    //List<Restaurant> getRestaurants();
 
     void block(Long id);
 
     void unblock(Long id);
 
-    list<Reviews> getReview();
+    //List<Reviews> getReview();
 
     void removeReview(Long reviewId);
 
