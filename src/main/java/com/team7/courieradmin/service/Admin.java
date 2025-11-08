@@ -1,19 +1,22 @@
 package com.team7.courieradmin.service;
-
+//import lombok.AllArgsConstructor;
+//import lombok.Getter;
+//import lombok.Setter;
+//@Getter
+//@Setter
+//@AllArgsConstructor
 
 public class Admin {
     private String login;
     private String password;
     private String email;
 
-    // Конструктор
     public Admin(String login, String password, String email) {
         this.login = login;
         this.password = password;
         this.email = email;
     }
 
-    // Геттеры и сеттеры
     public String getLogin() { return login; }
     public void setLogin(String login) { this.login = login; }
 

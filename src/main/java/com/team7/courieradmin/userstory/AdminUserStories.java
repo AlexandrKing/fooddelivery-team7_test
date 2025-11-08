@@ -9,16 +9,14 @@ import java.util.Scanner;
 
 public class AdminUserStories {
     public static void main(String[] args) {
-        // Создаем сервис курьеров и добавляем тестовых курьеров
+
         CourierService courierService = new CourierService();
         courierService.registerCourier("courier1", "Azat2007", "Азат Аминов", "azat@mail.com");
         courierService.registerCourier("courier2", "Alexandr2007", "Александр Горностаев", "alex@mail.com");
         courierService.registerCourier("courier3", "Vadim2008", "Вадим Выгон", "vadim@mail.com");
 
-        // Получаем список курьеров для административного сервиса
         List<Courier> couriers = courierService.getCouriers();
 
-        // Создаем административный сервис
         AdminInterface adminService = new AdminInterface(couriers);
         Scanner scanner = new Scanner(System.in);
 

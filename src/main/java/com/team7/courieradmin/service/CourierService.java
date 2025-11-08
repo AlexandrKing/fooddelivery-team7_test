@@ -13,7 +13,7 @@ public class CourierService {
 
 
     public void registerCourier(String login, String password, String name, String email) {
-        // Проверка уникальности логина
+
         if (isLoginExists(login)) {
             throw new IllegalArgumentException("Логин '" + login + "' уже занят. Выберите другой логин.");
         }
@@ -34,29 +34,25 @@ public class CourierService {
     }
 
     public void login(String login, String password) {
-        // Поиск курьера по логину
+
         Courier courier = findCourierByLogin(login);
 
         if (courier == null) {
             throw new IllegalArgumentException("Курьер с логином '" + login + "' не найден");
         }
 
-        // Проверка пароля
         if (!courier.getPassword().equals(password)) {
             throw new IllegalArgumentException("Неверный пароль");
         }
 
-        // Проверка статуса аккаунта
         if (courier.getStatus() == Courier.Status.Banned) {
             throw new IllegalArgumentException("Аккаунт заблокирован");
         }
 
-        // Успешная авторизация
         currentCourier = courier;
         System.out.println("Успешный вход! Добро пожаловать, " + courier.getName() + "!");
     }
 
-    // Метод для входа с клавиатуры
     public void loginFromInput() {
         Scanner scanner = new Scanner(System.in);
 
@@ -75,7 +71,6 @@ public class CourierService {
         }
     }
 
-    // Метод для выхода
     public void logout() {
         if (currentCourier != null) {
             System.out.println("До свидания, " + currentCourier.getName() + "!");
@@ -85,17 +80,14 @@ public class CourierService {
         }
     }
 
-    // Метод для проверки авторизации
     public boolean isLoggedIn() {
         return currentCourier != null;
     }
 
-    // Получение текущего курьера
     public Courier getCurrentCourier() {
         return currentCourier;
     }
 
-    // Вспомогательные методы
     private boolean isLoginExists(String login) {
         for (Courier courier : couriers) {
             if (courier.getLogin().equals(login)) {
@@ -114,7 +106,6 @@ public class CourierService {
         return null;
     }
 
-    // Метод для регистрации с вводом с клавиатуры
     public void registerCourierFromInput() {
         Scanner scanner = new Scanner(System.in);
 
@@ -149,7 +140,6 @@ public class CourierService {
         }
     }
 
-    // Обновленные методы с проверкой авторизации
 
     public void start(String login, String activityStatus) {
         checkAuthorization();
@@ -182,14 +172,12 @@ public class CourierService {
         System.out.println("Курьер " + currentCourier.getName() + " передал заказ " + orderId);
     }
 
-    // Проверка авторизации для защищенных методов
     private void checkAuthorization() {
         if (!isLoggedIn()) {
             throw new IllegalStateException("Для выполнения действия необходимо авторизоваться");
         }
     }
 
-    // Метод для получения списка курьеров
     public List<Courier> getCouriers() {
         return couriers;
     }
