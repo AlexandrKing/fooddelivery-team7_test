@@ -1,5 +1,12 @@
 package com.team7.client.model;
 
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class Address {
     private Long id;
     private String label;
