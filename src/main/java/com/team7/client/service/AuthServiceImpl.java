@@ -12,10 +12,10 @@ public class AuthServiceImpl implements AuthService {
     private User currentUser;
 
     private static final Pattern EMAIL_PATTERN = Pattern.compile("^[\\w.-]+@[\\w.-]+\\.[a-zA-Z]{2,}$");
-    private static final Pattern PHONE_PATTERN = Pattern.compile("^\\+7[0-9]{10}$");
+    private static final Pattern PHONE_PATTERN = Pattern.compile("^\\+79[0-9]{9}$");
 
     @Override
-    public User register(UserRole role, String email, String phone, String password, String confirmPassword) {
+    public User register(UserRole role, String name, String email, String phone, String password, String confirmPassword) {
 
         if (!password.equals(confirmPassword)) {
             throw new IllegalArgumentException("Пароли не совпадают");
@@ -26,7 +26,7 @@ public class AuthServiceImpl implements AuthService {
         }
 
         if (!isValidPhone(phone)) {
-            throw new IllegalArgumentException("Телефон должен быть в формате +7XXXXXXXXXX");
+            throw new IllegalArgumentException("Телефон должен быть в формате +79XXXXXXXXX");
         }
 
         if (!isEmailAvailable(email)) {
@@ -40,10 +40,10 @@ public class AuthServiceImpl implements AuthService {
         User user = new User();
         user.setId(System.currentTimeMillis());
         user.setRole(role);
+        user.setName("");
         user.setEmail(email);
         user.setPhone(phone);
         user.setPassword(password);
-        user.setName("");
 
         USERS.add(user);
         return user;

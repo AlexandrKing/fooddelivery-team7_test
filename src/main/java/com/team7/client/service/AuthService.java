@@ -5,7 +5,7 @@ import com.team7.client.model.User;
 import com.team7.client.model.UserRole;
 
 public interface AuthService {
-    User register(UserRole role, String email, String phone, String password, String confirmPassword);
+    User register(UserRole role, String name, String email, String phone, String password, String confirmPassword);
     User login(String email, String password);
     void logout();
     User getCurrentUser();

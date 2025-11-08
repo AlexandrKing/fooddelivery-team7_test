@@ -25,6 +25,7 @@ public class ClientsUserStories {
         try {
             User user = authService.register(
                     UserRole.CLIENT,
+                    "Иван",
                     "ivan@mail.ru",
                     "+79161234567",
                     "password123",
@@ -59,7 +60,7 @@ public class ClientsUserStories {
         try {
             User user = authService.login("ivan@mail.ru", "password123");
 
-            user.setName("Иван Сидоров");
+            user.setName("Александр");
             user.setPhone("+79167778899");
             User updatedUser = authService.updateProfile(user);
 
@@ -127,13 +128,13 @@ public class ClientsUserStories {
         System.out.println("Проверка доступности телефона '+79161111111': " + authService.isPhoneAvailable("+79161111111"));
 
         try {
-            authService.register(UserRole.CLIENT, "invalid-email", "+79161111111", "pass", "pass");
+            authService.register(UserRole.CLIENT, "pass","invalid-email", "+79161111111", "pass", "pass");
         } catch (IllegalArgumentException e) {
             System.out.println("Ошибка валидации email: " + e.getMessage());
         }
 
         try {
-            authService.register(UserRole.CLIENT, "test@mail.ru", "89161111111", "pass", "pass");
+            authService.register(UserRole.CLIENT, "pass","test@mail.ru", "89161111111", "pass", "pass");
         } catch (IllegalArgumentException e) {
             System.out.println("Ошибка валидации телефона: " + e.getMessage());
         }
