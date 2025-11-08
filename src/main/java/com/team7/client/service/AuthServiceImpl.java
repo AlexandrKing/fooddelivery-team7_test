@@ -91,7 +91,6 @@ public class AuthServiceImpl implements AuthService {
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("Пользователь не найден"));
 
-        // Проверка уникальности телефона
         boolean phoneExists = USERS.stream()
                 .filter(u -> !u.getId().equals(updatedUser.getId()))
                 .anyMatch(u -> u.getPhone().equals(updatedUser.getPhone()));
@@ -100,12 +99,10 @@ public class AuthServiceImpl implements AuthService {
             throw new IllegalArgumentException("Номер телефона уже используется");
         }
 
-        // Обновление данных
         existingUser.setName(updatedUser.getName());
         existingUser.setPhone(updatedUser.getPhone());
         existingUser.setEmail(updatedUser.getEmail());
 
-        // Обновляем текущего пользователя
         if (currentUser != null && currentUser.getId().equals(updatedUser.getId())) {
             currentUser = existingUser;
         }
