@@ -1,7 +1,15 @@
 package com.team7.client.model;
 
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
+
+import java.util.ArrayList;
 import java.util.List;
 
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class User {
     private Long id;
     private String name;
@@ -9,5 +17,5 @@ public class User {
     private String phone;
     private String password;
     private UserRole role;
-    private List<Address> addresses;
+    private List<Address> addresses = new ArrayList<>();
 }
