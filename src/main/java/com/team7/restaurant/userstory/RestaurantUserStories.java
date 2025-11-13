@@ -2,12 +2,16 @@ package com.team7.restaurant.userstory;
 
 import com.team7.restaurant.service.AuthService;
 import com.team7.restaurant.service.RestaurantService;
+import com.team7.restaurant.service.MenuService;
 import com.team7.restaurant.model.Restaurant;
+import com.team7.restaurant.model.Dish;
+import com.team7.restaurant.model.MenuCategory;
 import java.util.List;
 import java.util.Scanner;
 
 public class RestaurantUserStories {
   private static Restaurant currentRestaurant = null;
+  private static MenuService menuService = new MenuService();
 
   public static void main(String[] args) {
     AuthService authService = new AuthService();
@@ -23,8 +27,10 @@ public class RestaurantUserStories {
         System.out.println("Текущий ресторан: " + currentRestaurant.getName());
         System.out.println("1. Показать профиль ресторана");
         System.out.println("2. Изменить данные ресторана");
-        System.out.println("3. Выйти из системы");
-        System.out.println("4. Выйти из программы");
+        System.out.println("3. Управление меню");
+        System.out.println("4. Управление блюдами");
+        System.out.println("5. Выйти из системы");
+        System.out.println("6. Выйти из программы");
       } else {
         System.out.println("1. Зарегистрировать ресторан");
         System.out.println("2. Войти в систему");
@@ -60,9 +66,15 @@ public class RestaurantUserStories {
         updateRestaurantData(restaurantService, scanner);
         break;
       case 3:
-        logout();
+        manageMenu(scanner);
         break;
       case 4:
+        manageDishes(scanner);
+        break;
+      case 5:
+        logout();
+        break;
+      case 6:
         System.out.println("Выход из программы...");
         System.exit(0);
         break;
@@ -89,6 +101,207 @@ public class RestaurantUserStories {
       default:
         System.out.println("Неверный выбор!");
     }
+  }
+
+  private static void manageMenu(Scanner scanner) {
+    System.out.println("=== УПРАВЛЕНИЕ МЕНЮ ===");
+    System.out.println("1. Показать все блюда");
+    System.out.println("2. Показать доступные блюда");
+    System.out.println("3. Показать категории меню");
+    System.out.println("4. Добавить категорию меню");
+    System.out.println("5. Назад");
+
+    System.out.print("Выберите действие: ");
+    int choice = scanner.nextInt();
+    scanner.nextLine();
+
+    switch (choice) {
+      case 1:
+        showAllDishes();
+        break;
+      case 2:
+        showAvailableDishes();
+        break;
+      case 3:
+        showMenuCategories();
+        break;
+      case 4:
+        addMenuCategory(scanner);
+        break;
+      case 5:
+        return;
+      default:
+        System.out.println("Неверный выбор!");
+    }
+  }
+
+  private static void manageDishes(Scanner scanner) {
+    System.out.println("=== УПРАВЛЕНИЕ БЛЮДАМИ ===");
+    System.out.println("1. Добавить блюдо");
+    System.out.println("2. Удалить блюдо");
+    System.out.println("3. Изменить блюдо");
+    System.out.println("4. Переключить доступность блюда");
+    System.out.println("5. Назад");
+
+    System.out.print("Выберите действие: ");
+    int choice = scanner.nextInt();
+    scanner.nextLine();
+
+    switch (choice) {
+      case 1:
+        addDish(scanner);
+        break;
+      case 2:
+        removeDish(scanner);
+        break;
+      case 3:
+        updateDish(scanner);
+        break;
+      case 4:
+        toggleDishAvailability(scanner);
+        break;
+      case 5:
+        return;
+      default:
+        System.out.println("Неверный выбор!");
+    }
+  }
+
+  private static void showAllDishes() {
+    List<Dish> dishes = menuService.getMenuByRestaurantId(currentRestaurant.getId());
+    System.out.println("=== ВСЕ БЛЮДА ===");
+    if (dishes.isEmpty()) {
+      System.out.println("Блюд нет в меню");
+    } else {
+      for (Dish dish : dishes) {
+        System.out.println(dish.getId() + ". " + dish.getName() + " - " + dish.getPrice() + " руб. - " +
+            (dish.getAvailable() ? "Доступно" : "Недоступно"));
+      }
+    }
+  }
+
+  private static void showAvailableDishes() {
+    List<Dish> dishes = menuService.getAvailableDishes(currentRestaurant.getId());
+    System.out.println("=== ДОСТУПНЫЕ БЛЮДА ===");
+    if (dishes.isEmpty()) {
+      System.out.println("Нет доступных блюд");
+    } else {
+      for (Dish dish : dishes) {
+        System.out.println(dish.getId() + ". " + dish.getName() + " - " + dish.getPrice() + " руб.");
+      }
+    }
+  }
+
+  private static void showMenuCategories() {
+    List<MenuCategory> categories = currentRestaurant.getMenuCategories();
+    System.out.println("=== КАТЕГОРИИ МЕНю ===");
+    if (categories.isEmpty()) {
+      System.out.println("Категорий нет");
+    } else {
+      for (MenuCategory category : categories) {
+        System.out.println(category.getName() + " - " + category.getDescription());
+      }
+    }
+  }
+
+  private static void addMenuCategory(Scanner scanner) {
+    System.out.println("=== ДОБАВЛЕНИЕ КАТЕГОРИИ МЕНЮ ===");
+
+    System.out.print("Название категории: ");
+    String name = scanner.nextLine();
+
+    System.out.print("Описание категории: ");
+    String description = scanner.nextLine();
+
+    MenuCategory category = new MenuCategory();
+    category.setName(name);
+    category.setDescription(description);
+
+    currentRestaurant.getMenuCategories().add(category);
+    System.out.println("Категория добавлена!");
+  }
+
+  private static void addDish(Scanner scanner) {
+    System.out.println("=== ДОБАВЛЕНИЕ БЛЮДА ===");
+
+    System.out.print("Название блюда: ");
+    String name = scanner.nextLine();
+
+    System.out.print("Описание блюда: ");
+    String description = scanner.nextLine();
+
+    System.out.print("Цена: ");
+    double price = scanner.nextDouble();
+    scanner.nextLine();
+
+    Dish dish = new Dish();
+    dish.setName(name);
+    dish.setDescription(description);
+    dish.setPrice(price);
+    dish.setAvailable(true);
+
+    Dish addedDish = menuService.addDishToMenu(currentRestaurant.getId(), dish);
+    if (addedDish != null) {
+      System.out.println("Блюдо успешно добавлено!");
+    } else {
+      System.out.println("Ошибка добавления блюда");
+    }
+  }
+
+  private static void removeDish(Scanner scanner) {
+    System.out.println("=== УДАЛЕНИЕ БЛЮДА ===");
+    showAllDishes();
+
+    System.out.print("Введите ID блюда для удаления: ");
+    Long dishId = scanner.nextLong();
+    scanner.nextLine();
+
+    Dish removedDish = menuService.removeDishFromMenu(currentRestaurant.getId(), dishId);
+    if (removedDish != null) {
+      System.out.println("Блюдо удалено: " + removedDish.getName());
+    } else {
+      System.out.println("Блюдо не найдено");
+    }
+  }
+
+  private static void updateDish(Scanner scanner) {
+    System.out.println("=== ИЗМЕНЕНИЕ БЛЮДА ===");
+    showAllDishes();
+
+    System.out.print("Введите ID блюда для изменения: ");
+    Long dishId = scanner.nextLong();
+    scanner.nextLine();
+
+    System.out.print("Новое название: ");
+    String newName = scanner.nextLine();
+
+    System.out.print("Новое описание: ");
+    String newDescription = scanner.nextLine();
+
+    System.out.print("Новая цена: ");
+    double newPrice = scanner.nextDouble();
+    scanner.nextLine();
+
+    Dish dish = new Dish();
+    dish.setId(dishId);
+    dish.setName(newName);
+    dish.setDescription(newDescription);
+    dish.setPrice(newPrice);
+
+    menuService.updateDish(currentRestaurant.getId(), dish);
+    System.out.println("Блюдо обновлено!");
+  }
+
+  private static void toggleDishAvailability(Scanner scanner) {
+    System.out.println("=== ИЗМЕНЕНИЕ ДОСТУПНОСТИ БЛЮДА ===");
+    showAllDishes();
+
+    System.out.print("Введите ID блюда: ");
+    Long dishId = scanner.nextLong();
+    scanner.nextLine();
+
+    menuService.toggleDishAvailability(currentRestaurant.getId(), dishId);
+    System.out.println("Доступность блюда изменена!");
   }
 
   private static void registerRestaurant(AuthService authService, Scanner scanner) {
