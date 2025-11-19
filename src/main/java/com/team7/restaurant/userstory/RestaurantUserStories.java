@@ -248,12 +248,8 @@ public class RestaurantUserStories {
     Long dishId = scanner.nextLong();
     scanner.nextLine();
 
-    Dish removedDish = menuService.removeDishFromMenu(currentRestaurant.getId(), dishId);
-    if (removedDish != null) {
-      System.out.println("Блюдо удалено: " + removedDish.getName());
-    } else {
-      System.out.println("Блюдо не найдено");
-    }
+    menuService.removeDishFromMenu(currentRestaurant.getId(), dishId);
+    System.out.println("Блюдо удалено!");
   }
 
   private static void updateDish(Scanner scanner) {
@@ -295,19 +291,34 @@ public class RestaurantUserStories {
     System.out.println("\n=== РЕГИСТРАЦИЯ РЕСТОРАНА ===");
     System.out.print("Название ресторана: ");
     String name = scanner.nextLine();
-    System.out.print("Email: ");
-    String email = scanner.nextLine();
-    System.out.print("Пароль (мин. 6 символов): ");
-    String password = scanner.nextLine();
+
+    String email;
+    while (true) {
+      System.out.print("Email: ");
+      email = scanner.nextLine();
+      if (isValidEmail(email)) {
+        break;
+      } else {
+        System.out.println("Ошибка: Неверный формат email! Пример: restaurant@mail.com");
+      }
+    }
+
+    String password;
+    while (true) {
+      System.out.print("Пароль (мин. 6 символов): ");
+      password = scanner.nextLine();
+      if (password.length() >= 6) {
+        break;
+      } else {
+        System.out.println("Ошибка: Пароль должен быть не менее 6 символов!");
+      }
+    }
+
     System.out.print("Подтверждение пароля: ");
     String confirmPassword = scanner.nextLine();
 
     if (!password.equals(confirmPassword)) {
       System.out.println("Ошибка: Пароли не совпадают!");
-      return;
-    }
-    if (password.length() < 6) {
-      System.out.println("Ошибка: Пароль должен содержать минимум 6 символов!");
       return;
     }
 
@@ -330,6 +341,10 @@ public class RestaurantUserStories {
     }
   }
 
+  private static boolean isValidEmail(String email) {
+    return email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+  }
+
   private static void loginRestaurant(AuthService authService, Scanner scanner) {
     System.out.println("\n=== ВХОД В СИСТЕМУ ===");
     System.out.print("Email: ");
@@ -339,7 +354,7 @@ public class RestaurantUserStories {
 
     Restaurant restaurant = authService.login(email, password);
     if (restaurant != null) {
-      currentRestaurant = restaurant;
+      currentRestaurant = authService.getCurrentRestaurant();
       System.out.println("\nВХОД ВЫПОЛНЕН УСПЕШНО!");
       System.out.println("Добро пожаловать, " + restaurant.getName());
       System.out.println("Статус ресторана: " + restaurant.getStatus());
