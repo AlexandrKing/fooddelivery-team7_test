@@ -31,7 +31,7 @@ public class AdminUserStories {
 
             if (adminService.isLoggedIn()) {
                 Admin currentAdmin = adminService.getCurrentAdmin();
-                System.out.println("👨‍💼 Текущий администратор: " + currentAdmin.getLogin());
+                System.out.println("Текущий администратор: " + currentAdmin.getLogin());
                 System.out.println("=== Управление курьерами ===");
                 System.out.println("1. Показать всех курьеров");
                 System.out.println("2. Заблокировать курьера");
@@ -49,7 +49,7 @@ public class AdminUserStories {
 
                 System.out.println("=== Управление отзывами ===");
                 System.out.println("10. Показать все отзывы");
-                System.out.println("11. 🗑Удалить отзыв");
+                System.out.println("11. Удалить отзыв");
 
                 System.out.println("=== Управление заказами ===");
                 System.out.println("12. Показать все заказы");
