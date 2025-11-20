@@ -195,7 +195,7 @@ awsdesfg
 
   private static void showMenuCategories() {
     List<MenuCategory> categories = currentRestaurant.getMenuCategories();
-    System.out.println("\n=== КАТЕГОРИИ МЕНЮ ===");
+    System.out.println("\n=== КАТЕГОРИИ МЕНУ ===");
     if (categories.isEmpty()) {
       System.out.println("Категорий нет");
     } else {
@@ -299,6 +299,10 @@ awsdesfg
       System.out.print("Email: ");
       email = scanner.nextLine();
       if (isValidEmail(email)) {
+        if (authService.isEmailExists(email)) {
+          System.out.println("Ошибка: Этот email уже зарегистрирован! Используйте другой email.");
+          continue;
+        }
         break;
       } else {
         System.out.println("Ошибка: Неверный формат email! Пример: restaurant@mail.com");
@@ -324,8 +328,21 @@ awsdesfg
       return;
     }
 
-    System.out.print("Телефон: ");
-    String phone = scanner.nextLine();
+    String phone;
+    while (true) {
+      System.out.print("Телефон (формат: +7XXXXXXXXXX или 8XXXXXXXXXX): ");
+      phone = scanner.nextLine();
+      if (isValidPhone(phone)) {
+        if (authService.isPhoneExists(phone)) {
+          System.out.println("Ошибка: Этот телефон уже зарегистрирован! Используйте другой телефон.");
+          continue;
+        }
+        break;
+      } else {
+        System.out.println("Ошибка: Неверный формат телефона! Пример: +79161234567 или 89161234567");
+      }
+    }
+
     System.out.print("Адрес: ");
     String address = scanner.nextLine();
     System.out.print("Тип кухни: ");
@@ -345,6 +362,10 @@ awsdesfg
 
   private static boolean isValidEmail(String email) {
     return email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+  }
+
+  private static boolean isValidPhone(String phone) {
+    return phone.matches("^(\\+7|8)\\d{10}$");
   }
 
   private static void loginRestaurant(AuthService authService, Scanner scanner) {
@@ -372,8 +393,18 @@ awsdesfg
     System.out.println("\nВведите новые данные (оставьте пустым чтобы не менять):");
     System.out.print("Новое название: ");
     String newName = scanner.nextLine();
-    System.out.print("Новый телефон: ");
-    String newPhone = scanner.nextLine();
+
+    String newPhone;
+    while (true) {
+      System.out.print("Новый телефон: ");
+      newPhone = scanner.nextLine();
+      if (newPhone.isEmpty() || isValidPhone(newPhone)) {
+        break;
+      } else {
+        System.out.println("Ошибка: Неверный формат телефона! Пример: +79161234567 или 89161234567");
+      }
+    }
+
     System.out.print("Новый адрес: ");
     String newAddress = scanner.nextLine();
     System.out.print("Новый тип кухни: ");
@@ -424,5 +455,19 @@ awsdesfg
     currentRestaurant = null;
     System.out.println("Выход из системы...");
     System.out.println("Вы успешно вышли из системы.");
+  }
+
+  private static void debugCheckDishes() {
+    System.out.println("=== DEBUG INFO ===");
+    System.out.println("Current restaurant ID: " + currentRestaurant.getId());
+    System.out.println("Current restaurant name: " + currentRestaurant.getName());
+
+    List<Dish> dishes = menuService.getMenuByRestaurantId(currentRestaurant.getId());
+    System.out.println("Dishes count from service: " + dishes.size());
+
+    for (Dish dish : dishes) {
+      System.out.println("Dish: " + dish.getId() + " - " + dish.getName() + " - " + dish.getPrice());
+    }
+    System.out.println("==================");
   }
 }
