@@ -8,4 +8,5 @@ public interface AuthOperations {
   Restaurant login(String email, String password);
   Boolean changePassword(Long restaurantId, String currentPassword, String newPassword);
   void resetPassword(String email);
+  void logout();
 }
