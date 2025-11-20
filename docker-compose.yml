@@ -1,0 +1,27 @@
+version: '3.8'
+services:
+  postgres:
+    image: postgres:13
+    container_name: food_delivery_db
+    environment:
+      POSTGRES_DB: food_delivery
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./src/main/resources/users.sql:/docker-entrypoint-initdb.d/01-users.sql
+      - ./src/main/resources/restaurants.sql:/docker-entrypoint-initdb.d/02-restaurants.sql
+      - ./src/main/resources/addresses.sql:/docker-entrypoint-initdb.d/03-addresses.sql
+      - ./src/main/resources/menu.sql:/docker-entrypoint-initdb.d/04-menu.sql
+      - ./src/main/resources/carts.sql:/docker-entrypoint-initdb.d/05-carts.sql
+      - ./src/main/resources/cart_items.sql:/docker-entrypoint-initdb.d/06-cart_items.sql
+      - ./src/main/resources/orders.sql:/docker-entrypoint-initdb.d/07-orders.sql
+      - ./src/main/resources/order_items.sql:/docker-entrypoint-initdb.d/08-order_items.sql
+      - ./src/main/resources/reviews.sql:/docker-entrypoint-initdb.d/09-reviews.sql
+      - ./src/main/resources/data.sql:/docker-entrypoint-initdb.d/10-data.sql
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
