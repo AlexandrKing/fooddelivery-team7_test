@@ -13,9 +13,59 @@ import java.util.List;
 public class AuthService implements AuthOperations {
   private Restaurant currentRestaurant = null;
 
+  // ДОБАВЛЕННЫЕ МЕТОДЫ ДЛЯ ПРОВЕРКИ УНИКАЛЬНОСТИ
+  public boolean isEmailExists(String email) {
+    String sql = "SELECT COUNT(*) FROM restaurant WHERE email = ?";
+
+    try (Connection conn = DatabaseConfig.getConnection();
+         PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+      stmt.setString(1, email);
+      ResultSet rs = stmt.executeQuery();
+
+      if (rs.next()) {
+        return rs.getInt(1) > 0;
+      }
+    } catch (SQLException e) {
+      e.printStackTrace();
+    }
+    return false;
+  }
+
+  public boolean isPhoneExists(String phone) {
+    String sql = "SELECT COUNT(*) FROM restaurant WHERE phone = ?";
+
+    try (Connection conn = DatabaseConfig.getConnection();
+         PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+      stmt.setString(1, phone);
+      ResultSet rs = stmt.executeQuery();
+
+      if (rs.next()) {
+        return rs.getInt(1) > 0;
+      }
+    } catch (SQLException e) {
+      e.printStackTrace();
+    }
+    return false;
+  }
+
   @Override
   public Restaurant registerRestaurant(String name, String email, String password,
                                        String phone, String address, String cuisineType) {
+    if (!isValidPhone(phone)) {
+      throw new IllegalArgumentException("Неверный формат телефона");
+    }
+
+    // ПРОВЕРКА УНИКАЛЬНОСТИ ПЕРЕД РЕГИСТРАЦИЕЙ
+    if (isEmailExists(email)) {
+      throw new IllegalArgumentException("Email уже используется");
+    }
+
+    if (isPhoneExists(phone)) {
+      throw new IllegalArgumentException("Телефон уже используется");
+    }
+
     String sql = "INSERT INTO restaurant (name, email, password, phone, address, cuisine_type, status) VALUES (?, ?, ?, ?, ?, ?, 'PENDING') RETURNING *";
 
     try (Connection conn = DatabaseConfig.getConnection();
@@ -35,7 +85,7 @@ public class AuthService implements AuthOperations {
       }
     } catch (SQLException e) {
       if (e.getSQLState().equals("23505")) {
-        throw new IllegalArgumentException("Email уже используется");
+        throw new IllegalArgumentException("Email или телефон уже используются");
       }
       e.printStackTrace();
     }
@@ -163,5 +213,9 @@ public class AuthService implements AuthOperations {
 
     restaurant.setEmailVerified(rs.getBoolean("email_verified"));
     return restaurant;
+  }
+
+  private boolean isValidPhone(String phone) {
+    return phone.matches("^(\\+7|8)\\d{10}$");
   }
 }
