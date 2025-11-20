@@ -40,7 +40,7 @@ public class AuthServiceImpl implements AuthService {
         User user = new User();
         user.setId(System.currentTimeMillis());
         user.setRole(role);
-        user.setName("");
+        user.setName(name);
         user.setEmail(email);
         user.setPhone(phone);
         user.setPassword(password);
@@ -110,9 +110,9 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    public User addAddress(String userId, Address address) {
+    public User addAddress(Long userId, Address address) {
         User user = USERS.stream()
-                .filter(u -> u.getId().equals(Long.parseLong(userId)))
+                .filter(u -> u.getId().equals(userId))
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("Пользователь не найден"));
 
@@ -122,9 +122,9 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    public User changePassword(String userId, String oldPassword, String newPassword) {
+    public User changePassword(Long userId, String oldPassword, String newPassword) {
         User user = USERS.stream()
-                .filter(u -> u.getId().equals(Long.parseLong(userId)))
+                .filter(u -> u.getId().equals(userId))
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("Пользователь не найден"));
 
