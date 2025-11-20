@@ -37,7 +37,7 @@ public class RestaurantUserStories {
         System.out.println("2. Войти в систему");
         System.out.println("3. Выйти из программы");
       }
-
+awsdesfg
       System.out.print("Выберите действие: ");
       int choice = scanner.nextInt();
       scanner.nextLine();
