@@ -407,7 +407,7 @@ public class AdminInterface {
         for (Admin admin : admins) {
             if (admin.getLogin().equals(login) && admin.getPassword().equals(password)) {
                 currentAdmin = admin;
-                System.out.println("✅ Администратор " + login + " успешно вошел в систему");
+                System.out.println("Администратор " + login + " успешно вошел в систему");
                 return true;
             }
         }
