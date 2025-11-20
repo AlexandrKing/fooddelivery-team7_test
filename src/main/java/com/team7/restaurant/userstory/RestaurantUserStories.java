@@ -6,6 +6,8 @@ import com.team7.restaurant.service.MenuService;
 import com.team7.restaurant.model.Restaurant;
 import com.team7.restaurant.model.Dish;
 import com.team7.restaurant.model.MenuCategory;
+
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Scanner;
 
@@ -230,7 +232,7 @@ public class RestaurantUserStories {
     Dish dish = new Dish();
     dish.setName(name);
     dish.setDescription(description);
-    dish.setPrice(price);
+    dish.setPrice(BigDecimal.valueOf(price));
     dish.setAvailable(true);
 
     Dish addedDish = menuService.addDishToMenu(currentRestaurant.getId(), dish);
@@ -270,7 +272,7 @@ public class RestaurantUserStories {
     dish.setId(dishId);
     dish.setName(newName);
     dish.setDescription(newDescription);
-    dish.setPrice(newPrice);
+    dish.setPrice(BigDecimal.valueOf(newPrice));
 
     menuService.updateDish(currentRestaurant.getId(), dish);
     System.out.println("Блюдо обновлено!");
