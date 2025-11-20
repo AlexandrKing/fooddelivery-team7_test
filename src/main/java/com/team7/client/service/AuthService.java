@@ -12,6 +12,6 @@ public interface AuthService {
     boolean isEmailAvailable(String email);
     boolean isPhoneAvailable(String phone);
     User updateProfile(User updatedUser);
-    User addAddress(String userId, Address address);
-    User changePassword(String userId, String oldPassword, String newPassword);
+    User addAddress(Long userId, Address address);
+    User changePassword(Long userId, String oldPassword, String newPassword);
 }

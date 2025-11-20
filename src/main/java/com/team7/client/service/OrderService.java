@@ -8,11 +8,11 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 public interface OrderService {
-    Order createOrder(String userId, String restaurantId, String deliveryAddress,
+    Order createOrder(Long userId, Long restaurantId, String deliveryAddress,
                       DeliveryType deliveryType, LocalDateTime deliveryTime,
                       PaymentMethod paymentMethod);
-    Order getOrder(String orderId);
-    List<Order> getUserOrders(String userId);
-    Order cancelOrder(String orderId);
-    Order repeatOrder(String orderId);
+    Order getOrder(Long orderId);
+    List<Order> getUserOrders(Long userId);
+    Order cancelOrder(Long orderId);
+    Order repeatOrder(Long orderId);
 }
