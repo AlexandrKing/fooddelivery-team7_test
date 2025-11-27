@@ -1,123 +1,155 @@
 package com.team7.restaurant.service;
 
 import com.team7.restaurant.api.MenuOperations;
+import com.team7.restaurant.config.DatabaseConfig;
 import com.team7.restaurant.model.Dish;
 import com.team7.restaurant.model.MenuCategory;
-import com.team7.restaurant.model.Restaurant;
-import java.util.List;
+
+import java.sql.*;
 import java.util.ArrayList;
+import java.util.List;
 
 public class MenuService implements MenuOperations {
-  private static Long nextDishId = 1L;
-  private static Long nextCategoryId = 1L;
 
-  public MenuCategory createCategory(Long restaurantId, String name, String description) {
-    Restaurant restaurant = AuthService.getRestaurantById(restaurantId);
-    if (restaurant != null) {
-      MenuCategory category = new MenuCategory(nextCategoryId++, name, description, restaurantId);
-      restaurant.getMenuCategories().add(category);
-      return category;
-    }
-    return null;
-  }
-
-  public void deleteCategory(Long restaurantId, Long categoryId) {
-    Restaurant restaurant = AuthService.getRestaurantById(restaurantId);
-    if (restaurant != null) {
-      restaurant.getMenuCategories().removeIf(category -> category.getId().equals(categoryId));
-    }
-  }
-
-  public List<MenuCategory> getCategoriesByRestaurantId(Long restaurantId) {
-    Restaurant restaurant = AuthService.getRestaurantById(restaurantId);
-    return restaurant != null ? restaurant.getMenuCategories() : new ArrayList<>();
-  }
-
-  public void addDishToCategory(Long restaurantId, Long categoryId, Dish dish) {
-    Restaurant restaurant = AuthService.getRestaurantById(restaurantId);
-    if (restaurant != null) {
-      for (MenuCategory category : restaurant.getMenuCategories()) {
-        if (category.getId().equals(categoryId)) {
-          dish.setId(nextDishId++);
-          dish.setRestaurantId(restaurantId);
-          category.addDish(dish);
-          restaurant.getMenu().add(dish);
-          break;
-        }
-      }
-    }
-  }
   @Override
   public Dish addDishToMenu(Long restaurantId, Dish dish) {
-    Restaurant restaurant = AuthService.getRestaurantById(restaurantId);
-    if (restaurant != null) {
-      dish.setId(nextDishId++);
-      dish.setRestaurantId(restaurantId);
-      restaurant.getMenu().add(dish);
-      return dish;
+    String sql = "INSERT INTO dish (name, description, price, available, restaurant_id) VALUES (?, ?, ?, ?, ?) RETURNING *";
+
+    try (Connection conn = DatabaseConfig.getConnection();
+         PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+      stmt.setString(1, dish.getName());
+      stmt.setString(2, dish.getDescription());
+      stmt.setBigDecimal(3, dish.getPrice());
+      stmt.setBoolean(4, dish.getAvailable());
+      stmt.setLong(5, restaurantId);
+
+      ResultSet rs = stmt.executeQuery();
+
+      if (rs.next()) {
+        return mapResultSetToDish(rs);
+      }
+    } catch (SQLException e) {
+      e.printStackTrace();
     }
     return null;
   }
 
   @Override
   public void removeDishFromMenu(Long restaurantId, Long dishId) {
-    Restaurant restaurant = AuthService.getRestaurantById(restaurantId);
-    if (restaurant != null) {
-      restaurant.getMenu().removeIf(dish -> dish.getId().equals(dishId));
-      // Также удаляем из всех категорий
-      for (MenuCategory category : restaurant.getMenuCategories()) {
-        category.removeDish(dishId);
-      }
+    String sql = "DELETE FROM dish WHERE id = ? AND restaurant_id = ?";
+
+    try (Connection conn = DatabaseConfig.getConnection();
+         PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+      stmt.setLong(1, dishId);
+      stmt.setLong(2, restaurantId);
+      stmt.executeUpdate();
+
+    } catch (SQLException e) {
+      e.printStackTrace();
     }
   }
 
   @Override
   public void updateDish(Long restaurantId, Dish updatedDish) {
-    Restaurant restaurant = AuthService.getRestaurantById(restaurantId);
-    if (restaurant != null) {
-      for (Dish dish : restaurant.getMenu()) {
-        if (dish.getId().equals(updatedDish.getId())) {
-          dish.setName(updatedDish.getName());
-          dish.setDescription(updatedDish.getDescription());
-          dish.setPrice(updatedDish.getPrice());
-          dish.setCategory(updatedDish.getCategory());
-          break;
-        }
-      }
+    String sql = "UPDATE dish SET name = ?, description = ?, price = ? WHERE id = ? AND restaurant_id = ?";
+
+    try (Connection conn = DatabaseConfig.getConnection();
+         PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+      stmt.setString(1, updatedDish.getName());
+      stmt.setString(2, updatedDish.getDescription());
+      stmt.setBigDecimal(3, updatedDish.getPrice());
+      stmt.setLong(4, updatedDish.getId());
+      stmt.setLong(5, restaurantId);
+
+      stmt.executeUpdate();
+
+    } catch (SQLException e) {
+      e.printStackTrace();
     }
   }
 
   @Override
   public void toggleDishAvailability(Long restaurantId, Long dishId) {
-    Restaurant restaurant = AuthService.getRestaurantById(restaurantId);
-    if (restaurant != null) {
-      for (Dish dish : restaurant.getMenu()) {
-        if (dish.getId().equals(dishId)) {
-          dish.setAvailable(!dish.getAvailable());
-          break;
-        }
-      }
+    String sql = "UPDATE dish SET available = NOT available WHERE id = ? AND restaurant_id = ?";
+
+    try (Connection conn = DatabaseConfig.getConnection();
+         PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+      stmt.setLong(1, dishId);
+      stmt.setLong(2, restaurantId);
+      stmt.executeUpdate();
+
+    } catch (SQLException e) {
+      e.printStackTrace();
     }
   }
 
   @Override
   public List<Dish> getMenuByRestaurantId(Long restaurantId) {
-    Restaurant restaurant = AuthService.getRestaurantById(restaurantId);
-    return restaurant != null ? restaurant.getMenu() : new ArrayList<>();
+    List<Dish> dishes = new ArrayList<>();
+    String sql = "SELECT * FROM dish WHERE restaurant_id = ?";
+
+    try (Connection conn = DatabaseConfig.getConnection();
+         PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+      stmt.setLong(1, restaurantId);
+      ResultSet rs = stmt.executeQuery();
+
+      while (rs.next()) {
+        dishes.add(mapResultSetToDish(rs));
+      }
+    } catch (SQLException e) {
+      e.printStackTrace();
+    }
+    return dishes;
   }
 
   @Override
   public List<Dish> getAvailableDishes(Long restaurantId) {
-    Restaurant restaurant = AuthService.getRestaurantById(restaurantId);
-    if (restaurant != null) {
-      List<Dish> availableDishes = new ArrayList<>();
-      for (Dish dish : restaurant.getMenu()) {
-        if (dish.getAvailable()) {
-          availableDishes.add(dish);
-        }
+    List<Dish> dishes = new ArrayList<>();
+    String sql = "SELECT * FROM dish WHERE restaurant_id = ? AND available = true";
+
+    try (Connection conn = DatabaseConfig.getConnection();
+         PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+      stmt.setLong(1, restaurantId);
+      ResultSet rs = stmt.executeQuery();
+
+      while (rs.next()) {
+        dishes.add(mapResultSetToDish(rs));
       }
-      return availableDishes;
+    } catch (SQLException e) {
+      e.printStackTrace();
     }
+    return dishes;
+  }
+
+  private Dish mapResultSetToDish(ResultSet rs) throws SQLException {
+    Dish dish = new Dish();
+    dish.setId(rs.getLong("id"));
+    dish.setName(rs.getString("name"));
+    dish.setDescription(rs.getString("description"));
+    dish.setPrice(rs.getBigDecimal("price"));
+    dish.setAvailable(rs.getBoolean("available"));
+    dish.setRestaurantId(rs.getLong("restaurant_id"));
+    return dish;
+  }
+
+  // Эти методы можно оставить пустыми или удалить, если не используются
+  public MenuCategory createCategory(Long restaurantId, String name, String description) {
+    return null;
+  }
+
+  public void deleteCategory(Long restaurantId, Long categoryId) {
+  }
+
+  public List<MenuCategory> getCategoriesByRestaurantId(Long restaurantId) {
     return new ArrayList<>();
+  }
+
+  public void addDishToCategory(Long restaurantId, Long categoryId, Dish dish) {
   }
 }
