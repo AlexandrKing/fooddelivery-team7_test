@@ -1,0 +1,13 @@
+services:
+  postgres:
+    image: postgres:15
+    container_name: food_delivery_db
+    environment:
+      POSTGRES_DB: food_delivery
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./src/main/resources/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
+      - ./src/main/resources/data.sql:/docker-entrypoint-initdb.d/02-data.sql

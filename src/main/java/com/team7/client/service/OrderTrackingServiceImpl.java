@@ -22,6 +22,7 @@ public class OrderTrackingServiceImpl implements OrderTrackingService {
         Order order = orderService.getOrder(orderId);
         order.setStatus(status);
 
+        // Добавляем в историю статусов
         if (!STATUS_HISTORY.containsKey(orderId)) {
             STATUS_HISTORY.put(orderId, new ArrayList<>());
         }

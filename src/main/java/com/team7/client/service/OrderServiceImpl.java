@@ -35,6 +35,7 @@ public class OrderServiceImpl implements OrderService {
         order.setStatus(OrderStatus.PENDING);
         order.setCreatedAt(LocalDateTime.now());
 
+        // Создаем OrderItem из CartItem
         List<OrderItem> orderItems = new ArrayList<>();
         for (CartItem cartItem : cart.getItems()) {
             OrderItem orderItem = new OrderItem();

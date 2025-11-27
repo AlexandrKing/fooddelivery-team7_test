@@ -36,6 +36,7 @@ public class RestaurantServiceImpl implements RestaurantService {
     }
 
 
+    // Метод для добавления тестовых ресторанов
     public void addRestaurant(Restaurant restaurant) {
         RESTAURANTS.put(restaurant.getId(), restaurant);
     }

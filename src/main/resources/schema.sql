@@ -1,5 +1,17 @@
+-- Очистка таблиц в правильном порядке (из-за foreign keys)
+DROP TABLE IF EXISTS order_status_history CASCADE;
+DROP TABLE IF EXISTS reviews CASCADE;
+DROP TABLE IF EXISTS order_items CASCADE;
+DROP TABLE IF EXISTS orders CASCADE;
+DROP TABLE IF EXISTS cart_items CASCADE;
+DROP TABLE IF EXISTS carts CASCADE;
+DROP TABLE IF EXISTS addresses CASCADE;
+DROP TABLE IF EXISTS menu CASCADE;
+DROP TABLE IF EXISTS restaurants CASCADE;
+DROP TABLE IF EXISTS users CASCADE;
+
 -- Таблица пользователей
-CREATE TABLE users (
+CREATE TABLE IF NOT EXISTS users (
     id BIGSERIAL PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
     email VARCHAR(100) UNIQUE NOT NULL,
@@ -8,8 +20,8 @@ CREATE TABLE users (
     role VARCHAR(20) NOT NULL
 );
 
--- Таблица ресторанов (единая структура)
-CREATE TABLE restaurants (
+-- Таблица ресторанов
+CREATE TABLE IF NOT EXISTS restaurants (
     id BIGSERIAL PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
     email VARCHAR(100) UNIQUE NOT NULL,
@@ -23,8 +35,8 @@ CREATE TABLE restaurants (
     is_active BOOLEAN DEFAULT true
 );
 
--- Таблица меню (основная таблица для блюд)
-CREATE TABLE menu (
+-- Таблица меню
+CREATE TABLE IF NOT EXISTS menu (
     id BIGSERIAL PRIMARY KEY,
     restaurant_id BIGINT NOT NULL,
     name VARCHAR(100) NOT NULL,
@@ -36,7 +48,7 @@ CREATE TABLE menu (
 );
 
 -- Таблица адресов пользователей
-CREATE TABLE addresses (
+CREATE TABLE IF NOT EXISTS addresses (
     id BIGSERIAL PRIMARY KEY,
     user_id BIGINT NOT NULL,
     label VARCHAR(100) NOT NULL,
@@ -49,7 +61,7 @@ CREATE TABLE addresses (
 );
 
 -- Таблица корзин
-CREATE TABLE carts (
+CREATE TABLE IF NOT EXISTS carts (
     id BIGSERIAL PRIMARY KEY,
     user_id BIGINT NOT NULL,
     restaurant_id BIGINT NOT NULL,
@@ -59,7 +71,7 @@ CREATE TABLE carts (
 );
 
 -- Таблица элементов корзины
-CREATE TABLE cart_items (
+CREATE TABLE IF NOT EXISTS cart_items (
     id BIGSERIAL PRIMARY KEY,
     cart_id BIGINT NOT NULL,
     menu_item_id BIGINT NOT NULL,
@@ -69,7 +81,7 @@ CREATE TABLE cart_items (
 );
 
 -- Таблица заказов
-CREATE TABLE orders (
+CREATE TABLE IF NOT EXISTS orders (
     id BIGSERIAL PRIMARY KEY,
     user_id BIGINT NOT NULL,
     restaurant_id BIGINT NOT NULL,
@@ -85,7 +97,7 @@ CREATE TABLE orders (
 );
 
 -- Таблица элементов заказа
-CREATE TABLE order_items (
+CREATE TABLE IF NOT EXISTS order_items (
     id BIGSERIAL PRIMARY KEY,
     order_id BIGINT NOT NULL,
     menu_item_id BIGINT NOT NULL,
@@ -97,7 +109,7 @@ CREATE TABLE order_items (
 );
 
 -- Таблица отзывов
-CREATE TABLE reviews (
+CREATE TABLE IF NOT EXISTS reviews (
     id BIGSERIAL PRIMARY KEY,
     order_id BIGINT NOT NULL,
     user_id BIGINT NOT NULL,
@@ -114,7 +126,7 @@ CREATE TABLE reviews (
 );
 
 -- Таблица истории статусов заказа
-CREATE TABLE order_status_history (
+CREATE TABLE IF NOT EXISTS order_status_history (
     id BIGSERIAL PRIMARY KEY,
     order_id BIGINT NOT NULL,
     status VARCHAR(50) NOT NULL,
