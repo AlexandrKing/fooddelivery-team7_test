@@ -5,7 +5,7 @@ import com.team7.client.model.Order;
 import java.util.List;
 
 public interface HistoryService {
-    List<Order> getOrderHistory(String userId);
-    Order getOrderById(String orderId);
-    Order repeatOrder(String orderId);
+    List<Order> getOrderHistory(Long userId);
+    Order getOrderById(Long orderId);
+    Order repeatOrder(Long orderId);
 }
