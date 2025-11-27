@@ -1,5 +1,6 @@
 package com.team7.client.service;
 
+import com.team7.client.model.Menu;
 import com.team7.client.model.Restaurant;
 import java.util.*;
 
@@ -27,6 +28,11 @@ public class RestaurantServiceImpl implements RestaurantService {
                 .filter(restaurant -> maxDeliveryTime == null || restaurant.getDeliveryTime() <= maxDeliveryTime)
                 .filter(Restaurant::getIsActive)
                 .toList();
+    }
+
+    @Override
+    public List<Menu> getMenu(Long restaurantId) {
+        return List.of();
     }
 
 
