@@ -1,3 +1,8 @@
+DROP TABLE IF EXISTS dish CASCADE;
+DROP TABLE IF EXISTS menu_category CASCADE;
+DROP TABLE IF EXISTS restaurant CASCADE;
+
+
 -- Таблица ресторанов
 CREATE TABLE restaurant (
     id BIGSERIAL PRIMARY KEY,
