@@ -1,9 +1,9 @@
 package com.team7;
 
 import com.team7.service.config.DatabaseInitializer;
+import com.team7.userstory.client.ClientUserStories;
 import com.team7.userstory.restaurant.RestaurantUserStories;
 import com.team7.userstory.courieadmin.CourierUserStories;
-import com.team7.userstory.client.ClientsUserStories;
 import com.team7.userstory.courieadmin.AdminUserStories;
 
 import java.sql.Connection;
@@ -61,7 +61,7 @@ public class Main {
 
         case "3":
           System.out.println("\n--- Запуск ClientsUserStories ---");
-          ClientsUserStories.main(new String[]{});
+          ClientUserStories.main(new String[]{});
           break;
 
         case "4":

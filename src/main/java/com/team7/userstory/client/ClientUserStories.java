@@ -1,7 +1,7 @@
-package com.team7.client.userstory;
+package com.team7.userstory.client;
 
-import com.team7.client.model.*;
-import com.team7.client.service.*;
+import com.team7.service.client.*;
+import com.team7.model.client.*;
 
 import java.time.LocalDateTime;
 import java.util.List;

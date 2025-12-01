@@ -1,6 +1,5 @@
 package com.team7.service.client;
 
-import com.team7.client.model.Review;
 import java.sql.*;
 import com.team7.model.client.Review;
 import java.time.LocalDateTime;

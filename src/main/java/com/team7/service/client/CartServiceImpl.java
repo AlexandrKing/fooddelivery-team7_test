@@ -3,7 +3,7 @@ package com.team7.service.client;
 import com.team7.model.client.Cart;
 import com.team7.model.client.CartItem;
 
-import com.team7.client.model.*;
+import com.team7.model.client.*;
 import java.sql.*;
 import java.util.*;
 

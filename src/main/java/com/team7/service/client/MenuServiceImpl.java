@@ -1,6 +1,6 @@
-package com.team7.client.service;
+package com.team7.service.client;
 
-import com.team7.client.model.*;
+import com.team7.model.client.*;
 import java.util.*;
 
 public class MenuServiceImpl implements MenuService {

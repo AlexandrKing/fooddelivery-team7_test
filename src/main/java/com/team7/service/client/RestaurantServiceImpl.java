@@ -1,6 +1,6 @@
 package com.team7.service.client;
 
-import com.team7.model.client.Restaurant;
+import com.team7.model.client.*;
 import java.util.*;
 
 public class RestaurantServiceImpl implements RestaurantService {

@@ -1,6 +1,6 @@
-package com.team7.client.service;
+package com.team7.service.client;
 
-import com.team7.client.model.Order;
+import com.team7.model.client.Order;
 import java.util.List;
 
 public class HistoryServiceImpl implements HistoryService {
