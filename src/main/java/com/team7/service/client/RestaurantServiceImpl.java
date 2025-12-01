@@ -29,6 +29,11 @@ public class RestaurantServiceImpl implements RestaurantService {
                 .toList();
     }
 
+    @Override
+    public List<Menu> getMenu(Long restaurantId) {
+        return List.of();
+    }
+
 
     // Метод для добавления тестовых ресторанов
     public void addRestaurant(Restaurant restaurant) {

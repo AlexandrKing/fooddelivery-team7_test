@@ -551,14 +551,14 @@ public class ClientsUserStories {
 
         cartService.addItem(userId, 1L, 1L, 2);
         orderService.createOrder(
-            userId, 1L, "ул. Ленина, 10",
-            DeliveryType.DELIVERY, LocalDateTime.now().minusDays(2), PaymentMethod.CARD
+                userId, 1L, "ул. Ленина, 10",
+                DeliveryType.DELIVERY, LocalDateTime.now().minusDays(2), PaymentMethod.CARD
         );
 
         cartService.addItem(userId, 2L, 3L, 1);
         orderService.createOrder(
-            userId, 2L, "ул. Пушкина, 5",
-            DeliveryType.PICKUP, LocalDateTime.now().minusDays(1), PaymentMethod.CASH
+                userId, 2L, "ул. Пушкина, 5",
+                DeliveryType.PICKUP, LocalDateTime.now().minusDays(1), PaymentMethod.CASH
         );
     }
 
@@ -568,8 +568,8 @@ public class ClientsUserStories {
 
         cartService.addItem(2L, 1L, 1L, 1);
         Order order = orderService.createOrder(
-            2L, 1L, "ул. Тестовая, 1",
-            DeliveryType.DELIVERY, LocalDateTime.now(), PaymentMethod.CARD
+                2L, 1L, "ул. Тестовая, 1",
+                DeliveryType.DELIVERY, LocalDateTime.now(), PaymentMethod.CARD
         );
         return order.getId();
     }

@@ -1,8 +1,9 @@
-package com.team7.service.client;
+package com.team7.client.service;
 
-import com.team7.model.client.User;
-import com.team7.model.client.UserRole;
-import com.team7.model.client.Address;
+import com.team7.client.model.User;
+import com.team7.client.model.UserRole;
+import com.team7.client.model.Address;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -16,7 +17,6 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public User register(UserRole role, String name, String email, String phone, String password, String confirmPassword) {
-
         if (!password.equals(confirmPassword)) {
             throw new IllegalArgumentException("Пароли не совпадают");
         }
