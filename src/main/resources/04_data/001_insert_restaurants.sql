@@ -1,0 +1,28 @@
+-- Вставка 25 ресторанов (ИСПРАВЛЕННАЯ ВЕРСИЯ)
+INSERT INTO restaurant (name, email, password, phone, address, cuisine_type, status, email_verified)
+VALUES
+('Mario Pizza', 'mario.pizza@gmail.com', 'password123', '+79161234567', 'ул. Пушкина, 10', 'ITALIAN', 'ACTIVE', true),
+('Tokyo Sushi', 'tokyo.sushi@yahoo.com', 'password456', '+79167654321', 'ул. Лермонтова, 25', 'JAPANESE', 'ACTIVE', true),
+('Burger King', 'burger.king@outlook.com', 'password789', '+79161512233', 'ул. Гагарина, 5', 'FAST_FOOD', 'ACTIVE', true),
+('Бабушкина Кухня', 'babushka.kuhnya@yandex.ru', 'password000', '+79169998877', 'пр. Мира, 15', 'RUSSIAN', 'PENDING', false),
+('China Town', 'china.town@hotmail.com', 'password111', '+79163334457', 'ул. Кирова, 20', 'CHINESE', 'ACTIVE', true),
+('Coffee Lab', 'coffee.lab@gmail.com', 'password222', '+79165556677', 'пр. Ленина, 30', 'COFFEE', 'ACTIVE', true),
+('Taco Bell', 'taco.bell@yahoo.com', 'password333', '+79167778899', 'ул. Советская, 40', 'MEXICAN', 'ACTIVE', true),
+('French Bakery', 'french.bakery@outlook.com', 'password444', '+79168889900', 'ул. Цветочная, 55', 'FRENCH', 'ACTIVE', true),
+('Indian Spice', 'indian.spice@gmail.com', 'password555', '+79160001122', 'пр. Победы, 60', 'INDIAN', 'ACTIVE', true),
+('Greek Paradise', 'greek.paradise@yahoo.com', 'password666', '+79162223344', 'ул. Морская, 70', 'GREEK', 'ACTIVE', true),
+('Steak House', 'steak.house@outlook.com', 'password777', '+79164445566', 'ул. Горная, 80', 'AMERICAN', 'ACTIVE', true),
+('Vegan Garden', 'vegan.garden@gmail.com', 'password888', '+79166667788', 'ул. Зеленая, 90', 'VEGAN', 'ACTIVE', true),
+('Seafood Market', 'seafood.market@yahoo.com', 'password999', '+79168889911', 'ул. Портова, 100', 'SEAFOOD', 'ACTIVE', true),
+('BBQ Masters', 'bbq.masters@outlook.com', 'password101', '+79161112234', 'ул. Дымная, 110', 'BBQ', 'ACTIVE', true),
+('Pasta Factory', 'pasta.factory@gmail.com', 'password202', '+79163334455', 'ул. Макаронна, 120', 'ITALIAN', 'ACTIVE', true),
+('Deli Corner', 'deli.corner@yahoo.com', 'password303', '+79165556678', 'ул. Бутербродна, 130', 'DELI', 'ACTIVE', true),
+('Thai Orchid', 'thai.orchid@outlook.com', 'password404', '+79167778898', 'ул. Восточна, 140', 'THAI', 'ACTIVE', true),
+('Korean BBQ', 'korean.bbq@gmail.com', 'password505', '+79169990011', 'ул. Кимчи, 150', 'KOREAN', 'ACTIVE', true),
+('Mediterranean', 'mediterranean.food@yahoo.com', 'password606', '+79162221133', 'ул. Оливкова, 160', 'MEDITERRANEAN', 'ACTIVE', true),
+('Breakfast Club', 'breakfast.club@outlook.com', 'password707', '+79164442255', 'ул. Утрення, 170', 'BREAKFAST', 'ACTIVE', true),
+('Dessert Bar', 'dessert.bar@gmail.com', 'password808', '+79166663377', 'ул. Сладостна, 180', 'DESSERT', 'ACTIVE', true),
+('Juice Bar', 'juice.bar@yahoo.com', 'password909', '+79168884499', 'ул. Фруктова, 190', 'JUICE', 'ACTIVE', true),
+('Poke Bowl', 'poke.bowl@outlook.com', 'password010', '+79161115577', 'ул. Гавайска, 200', 'HAWAIIAN', 'ACTIVE', true),
+('Ramen Shop', 'ramen.shop@gmail.com', 'password121', '+79163336688', 'ул. Лапшева, 210', 'JAPANESE', 'ACTIVE', true),
+('Burrito Bar', 'burrito.bar@yahoo.com', 'password232', '+79165557799', 'ул. Остра, 220', 'MEXICAN', 'ACTIVE', true);
