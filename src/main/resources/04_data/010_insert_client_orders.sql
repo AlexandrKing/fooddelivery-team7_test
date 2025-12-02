@@ -1,0 +1,12 @@
+-- 10 заказов
+INSERT INTO client_orders (user_id, restaurant_id, status, delivery_address, delivery_type, payment_method, preferred_delivery_time, total_amount) VALUES
+(1, 1, 'DELIVERED', 'ул. Ленина, д. 10, кв. 25', 'DELIVERY', 'CARD', '2024-01-19 14:30:00', 1450.00),
+(2, 2, 'ACCEPTED', 'пр. Мира, д. 15, кв. 34', 'DELIVERY', 'CASH', '2024-01-19 15:00:00', 1480.00),
+(3, 3, 'PENDING', 'ул. Гагарина, д. 20, кв. 12', 'PICKUP', 'CARD', '2024-01-19 16:30:00', 740.00),
+(4, 4, 'DELIVERED', 'ул. Советская, д. 30, кв. 45', 'DELIVERY', 'CASH', '2024-01-18 13:45:00', 920.00),
+(5, 5, 'COOKING', 'пр. Победы, д. 15, кв. 23', 'DELIVERY', 'CARD', '2024-01-19 17:00:00', 670.00),
+(6, 1, 'CANCELLED', 'ул. Молодежная, д. 8, кв. 67', 'DELIVERY', 'CARD', '2024-01-17 12:15:00', 550.00),
+(1, 2, 'DELIVERED', 'ул. Ленина, д. 10, кв. 25', 'PICKUP', 'CASH', '2024-01-16 18:20:00', 1000.00),
+(2, 3, 'ACCEPTED', 'пр. Мира, д. 15, кв. 34', 'DELIVERY', 'CARD', '2024-01-19 16:45:00', 450.00),
+(3, 4, 'DELIVERED', 'ул. Гагарина, д. 20, кв. 12', 'DELIVERY', 'CASH', '2024-01-15 19:30:00', 640.00),
+(4, 5, 'PENDING', 'ул. Советская, д. 30, кв. 45', 'PICKUP', 'CARD', '2024-01-19 18:00:00', 380.00);

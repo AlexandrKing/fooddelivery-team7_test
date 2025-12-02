@@ -17,23 +17,56 @@ public class DatabaseInitializer {
 
       System.out.println("✅ Connected to PostgreSQL");
 
-      // ПРАВИЛЬНЫЙ ПОРЯДОК - ТАК ЖЕ КАК У ВАС
+      // ПРАВИЛЬНЫЙ ПОРЯДОК ВЫПОЛНЕНИЯ SQL ФАЙЛОВ
       List<String> sqlFiles = Arrays.asList(
+          // 1. УДАЛЕНИЕ СТАРЫХ ТАБЛИЦ
           "src/main/resources/01_drop/001_drop_tables.sql",
+          "src/main/resources/01_drop/002_drop_client_tables.sql",
+
+          // 2. СОЗДАНИЕ РЕСТОРАННЫХ ТАБЛИЦ
           "src/main/resources/02_create/001_create_restaurant.sql",
           "src/main/resources/02_create/002_create_menu_category.sql",
           "src/main/resources/02_create/003_create_dish.sql",
+
+          // 3. СОЗДАНИЕ КЛИЕНТСКИХ ТАБЛИЦ
+          "src/main/resources/02_create/004_create_client_users.sql",
+          "src/main/resources/02_create/005_create_client_restaurants.sql",
+          "src/main/resources/02_create/006_create_client_addresses.sql",
+          "src/main/resources/02_create/007_create_client_menu.sql",
+          "src/main/resources/02_create/008_create_client_carts.sql",
+          "src/main/resources/02_create/009_create_client_cart_items.sql",
+          "src/main/resources/02_create/010_create_client_orders.sql",
+          "src/main/resources/02_create/011_create_client_order_items.sql",
+          "src/main/resources/02_create/012_create_client_reviews.sql",
+          "src/main/resources/02_create/013_create_client_order_status_history.sql",
+
+          // 4. СОЗДАНИЕ ИНДЕКСОВ
           "src/main/resources/03_indexes/001_create_indexes.sql",
+          "src/main/resources/03_indexes/002_create_client_indexes.sql",
+
+          // 5. ВСТАВКА ДАННЫХ РЕСТОРАНОВ
           "src/main/resources/04_data/001_insert_restaurants.sql",
           "src/main/resources/04_data/002_insert_menu_categories.sql",
-          "src/main/resources/04_data/003_insert_dishes.sql"
+          "src/main/resources/04_data/003_insert_dishes.sql",
+
+          // 6. ВСТАВКА ДАННЫХ КЛИЕНТОВ
+          "src/main/resources/04_data/004_insert_client_users.sql",
+          "src/main/resources/04_data/005_insert_client_restaurants.sql",
+          "src/main/resources/04_data/006_insert_client_addresses.sql",
+          "src/main/resources/04_data/007_insert_client_menu.sql",
+          "src/main/resources/04_data/008_insert_client_carts.sql",
+          "src/main/resources/04_data/009_insert_client_cart_items.sql",
+          "src/main/resources/04_data/010_insert_client_orders.sql",
+          "src/main/resources/04_data/011_insert_client_order_items.sql",
+          "src/main/resources/04_data/012_insert_client_reviews.sql",
+          "src/main/resources/04_data/013_insert_client_order_status_history.sql"
       );
 
       System.out.println("Executing SQL files in correct order...");
 
       for (String sqlFile : sqlFiles) {
         try {
-          System.out.print("  📄 " + sqlFile + "... ");
+          System.out.print("  📄 " + sqlFile.substring(sqlFile.lastIndexOf('/') + 1) + "... ");
 
           java.nio.file.Path path = Paths.get(sqlFile);
 
@@ -55,7 +88,6 @@ public class DatabaseInitializer {
           }
 
           // ВЫПОЛНЯЕМ ВЕСЬ SQL КАК ОДНУ КОМАНДУ
-          // (особенно для CREATE TABLE с FOREIGN KEY)
           stmt.execute(sql);
           System.out.println("✅ DONE");
 
@@ -73,25 +105,7 @@ public class DatabaseInitializer {
       }
 
       System.out.println("\n✅ Database initialization complete!");
-
-      // Проверяем таблицы
-      System.out.println("\nChecking tables...");
-      var rs = stmt.executeQuery(
-          "SELECT table_name FROM information_schema.tables " +
-              "WHERE table_schema = 'public' ORDER BY table_name"
-      );
-
-      int tableCount = 0;
-      while (rs.next()) {
-        System.out.println("  • " + rs.getString("table_name"));
-        tableCount++;
-      }
-
-      if (tableCount == 0) {
-        System.out.println("  ❌ No tables created!");
-      } else {
-        System.out.println("  ✅ " + tableCount + " tables created");
-      }
+      checkAllTables(stmt);
 
     } catch (Exception e) {
       System.err.println("❌ Database initialization failed: " + e.getMessage());
@@ -140,5 +154,32 @@ public class DatabaseInitializer {
         System.err.println("    ✗ Final SQL Error: " + e.getMessage());
       }
     }
+  }
+
+  private static void checkAllTables(Statement stmt) throws Exception {
+    System.out.println("\nChecking tables...");
+
+    // Все таблицы: ресторанные + клиентские
+    String[] allTables = {
+        // Ресторанные таблицы
+        "restaurant", "menu_category", "dish",
+        // Клиентские таблицы
+        "client_users", "client_restaurants", "client_addresses", "client_menu",
+        "client_carts", "client_cart_items", "client_orders", "client_order_items",
+        "client_reviews", "client_order_status_history"
+    };
+
+    int createdCount = 0;
+    for (String table : allTables) {
+      try {
+        stmt.execute("SELECT 1 FROM " + table + " LIMIT 1");
+        System.out.println("  • " + table);
+        createdCount++;
+      } catch (Exception e) {
+        System.out.println("  • " + table + " ❌ NOT FOUND");
+      }
+    }
+
+    System.out.println("\n✅ " + createdCount + " tables created out of " + allTables.length);
   }
 }
