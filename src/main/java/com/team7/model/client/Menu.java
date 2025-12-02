@@ -13,4 +13,31 @@ public class Menu {
     private String description;
     private Double price;
     private Boolean isAvailable;
+
+    public void setRestaurantId(long restaurantId) {
+    }
+
+    public void setAvailable(boolean isAvailable) {
+    }
+
+    public void setCategory(String category) {
+    }
+
+    public void setCalories(int calories) {
+    }
+
+    public void setWeight(double weight) {
+    }
+
+    public void setImageUrl(String imageUrl) {
+    }
+
+    public void setCookingTime(int cookingTime) {
+    }
+
+    public void setName(int cookingTime) {
+    }
+
+    public void setName(String name) {
+    }
 }

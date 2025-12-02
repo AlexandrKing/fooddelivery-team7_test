@@ -6,8 +6,8 @@ import java.util.List;
 public class HistoryServiceImpl implements HistoryService {
     private final OrderService orderService;
 
-    public HistoryServiceImpl() {
-        this.orderService = new OrderServiceImpl();
+    public HistoryServiceImpl(OrderService orderService) {
+        this.orderService = orderService;
     }
 
     @Override

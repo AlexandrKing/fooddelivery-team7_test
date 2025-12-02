@@ -9,6 +9,9 @@ import java.util.List;
 public class ReviewServiceImpl implements ReviewService {
     private final DatabaseService dbService = new DatabaseService();
 
+    public ReviewServiceImpl(DatabaseService dbService) {
+    }
+
     @Override
     public Review createReview(Long orderId, Integer restaurantRating, Integer courierRating, String comment) {
         if (restaurantRating != null && (restaurantRating < 1 || restaurantRating > 5)) {

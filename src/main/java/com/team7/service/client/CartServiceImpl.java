@@ -10,6 +10,10 @@ import java.util.*;
 public class CartServiceImpl implements CartService {
     private final DatabaseService dbService = new DatabaseService();
 
+    public CartServiceImpl() {
+
+    }
+
     @Override
     public Cart getCart(Long userId) {
         String cartSql = "SELECT * FROM carts WHERE user_id = ?";

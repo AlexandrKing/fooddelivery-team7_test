@@ -12,6 +12,8 @@ import java.util.List;
 public class Restaurant {
     private Long id;
     private String name;
+    private String address;
+    private String cuisineType;
     private Double rating;
     private Integer deliveryTime;
     private Double minOrderAmount;

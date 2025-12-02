@@ -1,7 +1,6 @@
 package com.team7.service.client;
 
 import com.team7.model.client.Menu;
-
 import java.util.List;
 
 public interface MenuService {
