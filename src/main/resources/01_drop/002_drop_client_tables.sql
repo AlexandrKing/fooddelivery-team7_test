@@ -1,4 +1,3 @@
--- Удаление клиентских таблиц в правильном порядке
 DROP TABLE IF EXISTS client_order_status_history CASCADE;
 DROP TABLE IF EXISTS client_reviews CASCADE;
 DROP TABLE IF EXISTS client_order_items CASCADE;

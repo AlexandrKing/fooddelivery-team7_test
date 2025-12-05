@@ -3,6 +3,7 @@ package com.team7.service.client;
 import com.team7.model.client.User;
 import com.team7.model.client.UserRole;
 import com.team7.model.client.Address;
+import com.team7.service.config.DatabaseConfig;
 
 import java.sql.*;
 import java.util.ArrayList;
@@ -10,14 +11,13 @@ import java.util.List;
 import java.util.regex.Pattern;
 
 public class AuthServiceImpl implements AuthService {
-  private final DatabaseService dbService;
   private User currentUser;
 
   private static final Pattern EMAIL_PATTERN = Pattern.compile("^[\\w.-]+@[\\w.-]+\\.[a-zA-Z]{2,}$");
   private static final Pattern PHONE_PATTERN = Pattern.compile("^\\+79[0-9]{9}$");
 
-  public AuthServiceImpl(DatabaseService dbService) {
-    this.dbService = dbService;
+  public AuthServiceImpl() {
+    // Конструктор без параметров
   }
 
   @Override
@@ -44,7 +44,7 @@ public class AuthServiceImpl implements AuthService {
 
     String sql = "INSERT INTO client_users (name, email, phone, password, role) VALUES (?, ?, ?, ?, ?::user_role) RETURNING id";
 
-    try (Connection conn = dbService.connect();
+    try (Connection conn = DatabaseConfig.getConnection();
          PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
       pstmt.setString(1, name);
@@ -76,7 +76,7 @@ public class AuthServiceImpl implements AuthService {
   public User login(String email, String password) {
     String sql = "SELECT * FROM client_users WHERE email = ? AND password = ?";
 
-    try (Connection conn = dbService.connect();
+    try (Connection conn = DatabaseConfig.getConnection();
          PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
       pstmt.setString(1, email);
@@ -109,7 +109,7 @@ public class AuthServiceImpl implements AuthService {
   public boolean isEmailAvailable(String email) {
     String sql = "SELECT COUNT(*) FROM client_users WHERE email = ?";
 
-    try (Connection conn = dbService.connect();
+    try (Connection conn = DatabaseConfig.getConnection();
          PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
       pstmt.setString(1, email);
@@ -128,7 +128,7 @@ public class AuthServiceImpl implements AuthService {
   public boolean isPhoneAvailable(String phone) {
     String sql = "SELECT COUNT(*) FROM client_users WHERE phone = ?";
 
-    try (Connection conn = dbService.connect();
+    try (Connection conn = DatabaseConfig.getConnection();
          PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
       pstmt.setString(1, phone);
@@ -147,7 +147,7 @@ public class AuthServiceImpl implements AuthService {
   public User updateProfile(User updatedUser) {
     String sql = "UPDATE client_users SET name = ?, phone = ?, email = ? WHERE id = ?";
 
-    try (Connection conn = dbService.connect();
+    try (Connection conn = DatabaseConfig.getConnection();
          PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
       pstmt.setString(1, updatedUser.getName());
@@ -177,7 +177,7 @@ public class AuthServiceImpl implements AuthService {
   public User addAddress(Long userId, Address address) {
     String sql = "INSERT INTO client_addresses (user_id, label, address, apartment) VALUES (?, ?, ?, ?)";
 
-    try (Connection conn = dbService.connect();
+    try (Connection conn = DatabaseConfig.getConnection();
          PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
       pstmt.setLong(1, userId);
@@ -210,7 +210,7 @@ public class AuthServiceImpl implements AuthService {
     // Сначала проверяем старый пароль
     String checkSql = "SELECT COUNT(*) FROM client_users WHERE id = ? AND password = ?";
 
-    try (Connection conn = dbService.connect();
+    try (Connection conn = DatabaseConfig.getConnection();
          PreparedStatement checkStmt = conn.prepareStatement(checkSql)) {
 
       checkStmt.setLong(1, userId);
@@ -227,7 +227,7 @@ public class AuthServiceImpl implements AuthService {
     // Обновляем пароль
     String updateSql = "UPDATE client_users SET password = ? WHERE id = ?";
 
-    try (Connection conn = dbService.connect();
+    try (Connection conn = DatabaseConfig.getConnection();
          PreparedStatement pstmt = conn.prepareStatement(updateSql)) {
 
       pstmt.setString(1, newPassword);
@@ -249,7 +249,7 @@ public class AuthServiceImpl implements AuthService {
   }
 
   private User getUserById(Long userId) {
-    try (Connection conn = dbService.connect()) {
+    try (Connection conn = DatabaseConfig.getConnection()) {
       return getUserById(userId, conn);
     } catch (SQLException e) {
       throw new RuntimeException("Ошибка получения пользователя: " + e.getMessage(), e);

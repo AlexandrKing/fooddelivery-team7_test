@@ -12,4 +12,6 @@ public class CartItem {
     private Long menuItemId;
     private Long restaurantId;
     private Integer quantity;
+    private String name;
+    private Double price;
 }

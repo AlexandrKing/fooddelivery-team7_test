@@ -1,15 +1,17 @@
 package com.team7.service.client;
 
-import java.sql.*;
 import com.team7.model.client.Review;
+import com.team7.service.config.DatabaseConfig;
+
+import java.sql.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
 public class ReviewServiceImpl implements ReviewService {
-    private final DatabaseService dbService = new DatabaseService();
 
-    public ReviewServiceImpl(DatabaseService dbService) {
+    public ReviewServiceImpl() {
+        // Конструктор без параметров
     }
 
     @Override
@@ -22,15 +24,15 @@ public class ReviewServiceImpl implements ReviewService {
             throw new IllegalArgumentException("Рейтинг курьера должен быть от 1 до 5");
         }
 
-        String sql = "INSERT INTO reviews (order_id, user_id, restaurant_id, courier_id, restaurant_rating, courier_rating, comment, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO client_reviews (order_id, user_id, restaurant_id, courier_id, restaurant_rating, courier_rating, comment, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
 
-        try (Connection conn = dbService.connect();
+        try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
             pstmt.setLong(1, orderId);
-            pstmt.setLong(2, 1L);
-            pstmt.setLong(3, 1L);
-            pstmt.setLong(4, 1L);
+            pstmt.setLong(2, 1L); // TODO: Получить user_id из текущей сессии
+            pstmt.setLong(3, 1L); // TODO: Получить restaurant_id из заказа
+            pstmt.setLong(4, 1L); // TODO: Получить courier_id из заказа
 
             if (restaurantRating != null) {
                 pstmt.setInt(5, restaurantRating);
@@ -76,9 +78,9 @@ public class ReviewServiceImpl implements ReviewService {
     @Override
     public List<Review> getReviews(Long userId) {
         List<Review> reviews = new ArrayList<>();
-        String sql = "SELECT * FROM reviews WHERE user_id = ?";
+        String sql = "SELECT * FROM client_reviews WHERE user_id = ?";
 
-        try (Connection conn = dbService.connect();
+        try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setLong(1, userId);
@@ -107,9 +109,9 @@ public class ReviewServiceImpl implements ReviewService {
 
     @Override
     public Double getRestaurantRating(Long restaurantId) {
-        String sql = "SELECT AVG(restaurant_rating) as avg_rating FROM reviews WHERE restaurant_id = ? AND restaurant_rating IS NOT NULL";
+        String sql = "SELECT AVG(restaurant_rating) as avg_rating FROM client_reviews WHERE restaurant_id = ? AND restaurant_rating IS NOT NULL";
 
-        try (Connection conn = dbService.connect();
+        try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setLong(1, restaurantId);
@@ -129,9 +131,9 @@ public class ReviewServiceImpl implements ReviewService {
 
     @Override
     public Double getCourierRating(Long courierId) {
-        String sql = "SELECT AVG(courier_rating) as avg_rating FROM reviews WHERE courier_id = ? AND courier_rating IS NOT NULL";
+        String sql = "SELECT AVG(courier_rating) as avg_rating FROM client_reviews WHERE courier_id = ? AND courier_rating IS NOT NULL";
 
-        try (Connection conn = dbService.connect();
+        try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setLong(1, courierId);

@@ -2,6 +2,7 @@ package com.team7.userstory.client;
 
 import com.team7.service.client.*;
 import com.team7.model.client.*;
+import com.team7.service.config.DatabaseConfig;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -9,17 +10,19 @@ import java.util.Scanner;
 
 public class ClientUserStories {
     private static User currentUser = null;
-    private static DatabaseService dbService = new DatabaseService();
 
     public static void main(String[] args) {
-        AuthService authService = new AuthServiceImpl(dbService);
-        RestaurantService restaurantService = new RestaurantServiceImpl(dbService);
-        MenuService menuService = new MenuServicelmpl(dbService);
+        // Создаем сервисы без DatabaseConfig
+        AuthService authService = new AuthServiceImpl();
+        RestaurantService restaurantService = new RestaurantServiceImpl();
+        MenuService menuService = new MenuServiceImpl(); // ✅ Исправлено: MenuServicelmpl -> MenuServiceImpl
         CartService cartService = new CartServiceImpl();
-        OrderService orderService = new OrderServiceImpl(dbService, cartService);
-        HistoryService historyService = new HistoryServiceImpl(orderService);
-        OrderTrackingService orderTrackingService = new OrderTrackingServiceImpl(orderService);
-        ReviewService reviewService = new ReviewServiceImpl(dbService);
+        OrderService orderService = new OrderServiceImpl(cartService); // Только cartService
+
+        // Если нужны дополнительные сервисы, раскомментируйте:
+        // HistoryService historyService = new HistoryServiceImpl(orderService);
+        // OrderTrackingService orderTrackingService = new OrderTrackingServiceImpl(orderService);
+        // ReviewService reviewService = new ReviewServiceImpl();
 
         Scanner scanner = new Scanner(System.in);
         boolean running = true;
@@ -259,7 +262,8 @@ public class ClientUserStories {
             System.out.println("📦 Товары в корзине:");
             for (int i = 0; i < cart.getItems().size(); i++) {
                 CartItem item = cart.getItems().get(i);
-                System.out.println((i + 1) + ". Товар ID: " + item.getMenuItemId() +
+                System.out.println((i + 1) + ". " + item.getName() +
+                    " | 💰 " + item.getPrice() + " руб" +
                     " | Количество: " + item.getQuantity());
             }
             System.out.println("💰 Общая сумма: " + cart.getTotalAmount() + " руб");
@@ -490,7 +494,7 @@ public class ClientUserStories {
         System.out.println("📍 Мои адреса:");
         for (int i = 0; i < currentUser.getAddresses().size(); i++) {
             Address addr = currentUser.getAddresses().get(i);
-            System.out.println((i + 1) + ". " + addr.getLabel() + ": " + addr.getAddress());
+            System.out.println((i + 1) + ". " + addr.getLabel() + ": " + addr.getAddress() + ", кв. " + addr.getApartment());
         }
 
         System.out.println("\n1. ➕ Добавить адрес");

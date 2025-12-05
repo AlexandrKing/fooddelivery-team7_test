@@ -9,36 +9,70 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class Menu {
     private Long id;
+    private Long restaurantId;
     private String name;
     private String description;
     private Double price;
-    private Boolean isAvailable;
+    private Boolean available;
+    private String category;
+    private Integer calories;
+    private Double weight;
+    private String imageUrl;
+    private Integer cookingTime;
 
-    public void setRestaurantId(long restaurantId) {
+    // Дополнительные геттеры для совместимости с различными стилями
+    public Boolean getIsAvailable() {
+        return available;
     }
 
-    public void setAvailable(boolean isAvailable) {
+    public void setIsAvailable(Boolean isAvailable) {
+        this.available = isAvailable;
     }
 
-    public void setCategory(String category) {
+    // Конструктор с основными полями (для удобства)
+    public Menu(Long id, Long restaurantId, String name, String description, Double price, Boolean available) {
+        this.id = id;
+        this.restaurantId = restaurantId;
+        this.name = name;
+        this.description = description;
+        this.price = price;
+        this.available = available;
     }
 
-    public void setCalories(int calories) {
+    // Конструктор для тестов
+    public Menu(Long id, String name, String description, Double price) {
+        this.id = id;
+        this.name = name;
+        this.description = description;
+        this.price = price;
+        this.available = true;
     }
 
-    public void setWeight(double weight) {
+    // Билдер-методы для удобного создания объектов
+    public Menu withRestaurantId(Long restaurantId) {
+        this.restaurantId = restaurantId;
+        return this;
     }
 
-    public void setImageUrl(String imageUrl) {
+    public Menu withCategory(String category) {
+        this.category = category;
+        return this;
     }
 
-    public void setCookingTime(int cookingTime) {
+    public Menu withImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
+        return this;
     }
 
-    public void setName(int cookingTime) {
-
+    // Метод для проверки доступности
+    public boolean isAvailable() {
+        return available != null && available;
     }
 
-    public void setName(String name) {
+    // Метод для форматированного вывода
+    @Override
+    public String toString() {
+        return String.format("Menu{id=%d, name='%s', price=%.2f, available=%s}",
+            id, name, price, available);
     }
 }

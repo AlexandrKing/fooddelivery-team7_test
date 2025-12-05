@@ -1,6 +1,7 @@
 package com.team7.service.client;
 
 import com.team7.model.client.*;
+import com.team7.service.config.DatabaseConfig;
 
 import java.sql.*;
 import java.time.LocalDateTime;
@@ -8,11 +9,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class OrderServiceImpl implements OrderService {
-    private final DatabaseService dbService;
     private final CartService cartService;
 
-    public OrderServiceImpl(DatabaseService dbService, CartService cartService) {
-        this.dbService = dbService;
+    public OrderServiceImpl(CartService cartService) {
         this.cartService = cartService;
     }
 
@@ -29,7 +28,7 @@ public class OrderServiceImpl implements OrderService {
 
         Connection conn = null;
         try {
-            conn = dbService.connect();
+            conn = DatabaseConfig.getConnection();
             conn.setAutoCommit(false);
 
             // Создаем заказ
@@ -64,8 +63,8 @@ public class OrderServiceImpl implements OrderService {
                     for (CartItem cartItem : cart.getItems()) {
                         itemStmt.setLong(1, orderId);
                         itemStmt.setLong(2, cartItem.getMenuItemId());
-                        itemStmt.setString(3, "Товар " + cartItem.getMenuItemId()); // В реальности нужно получать имя
-                        itemStmt.setDouble(4, 100.0); // В реальности нужно получать цену
+                        itemStmt.setString(3, cartItem.getName());
+                        itemStmt.setDouble(4, cartItem.getPrice());
                         itemStmt.setInt(5, cartItem.getQuantity());
                         itemStmt.addBatch();
                     }
@@ -116,7 +115,7 @@ public class OrderServiceImpl implements OrderService {
     public Order getOrder(Long orderId) {
         String sql = "SELECT * FROM client_orders WHERE id = ?";
 
-        try (Connection conn = dbService.connect();
+        try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setLong(1, orderId);
@@ -152,7 +151,7 @@ public class OrderServiceImpl implements OrderService {
         List<Order> orders = new ArrayList<>();
         String sql = "SELECT * FROM client_orders WHERE user_id = ? ORDER BY created_at DESC";
 
-        try (Connection conn = dbService.connect();
+        try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setLong(1, userId);
@@ -183,7 +182,7 @@ public class OrderServiceImpl implements OrderService {
     public Order cancelOrder(Long orderId) {
         String sql = "UPDATE client_orders SET status = ?::order_status WHERE id = ? AND status = ?::order_status";
 
-        try (Connection conn = dbService.connect();
+        try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setString(1, OrderStatus.CANCELLED.toString());
