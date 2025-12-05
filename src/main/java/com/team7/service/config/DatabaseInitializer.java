@@ -30,12 +30,22 @@ public class DatabaseInitializer {
   private static void checkDatabaseStructure(Connection conn) throws SQLException {
     System.out.println("\n🔍 ПРОВЕРКА СТРУКТУРЫ БАЗЫ ДАННЫХ:");
 
-    // Список таблиц, которые должны существовать
+    // ИСПРАВЛЕННЫЙ список таблиц (совпадает с SQL файлами)
     String[] tables = {
-        "client_users", "client_restaurants", "client_addresses",
-        "client_menu", "client_carts", "client_cart_items",
-        "client_orders", "client_order_items", "client_reviews",
-        "admin_users", "courier_users", "courier_assigned_orders"
+        "users",
+        "restaurants",  // ИСПРАВЛЕНО: было client_restaurants
+        "menu_categories",
+        "dishes",       // ИСПРАВЛЕНО: было client_menu
+        "addresses",
+        "carts",
+        "cart_items",
+        "orders",
+        "order_items",
+        "reviews",
+        "order_status_history",
+        "admin_users",
+        "courier_users",
+        "courier_assigned_orders"
     };
 
     int foundTables = 0;

@@ -12,7 +12,8 @@ public class MenuService implements MenuOperations {
 
   @Override
   public Dish addDishToMenu(Long restaurantId, Dish dish) {
-    String sql = "INSERT INTO dish (name, description, price, available, restaurant_id) VALUES (?, ?, ?, ?, ?) RETURNING *";
+    // ИСПРАВЛЕНО: было dish, стало dishes
+    String sql = "INSERT INTO dishes (name, description, price, available, restaurant_id, created_at) VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP) RETURNING *";
 
     try (Connection conn = DatabaseConfig.getConnection();
          PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -36,14 +37,16 @@ public class MenuService implements MenuOperations {
 
   @Override
   public boolean removeDishFromMenu(Long restaurantId, Long dishId) {
-    String sql = "DELETE FROM dish WHERE id = ? AND restaurant_id = ?";
+    // ИСПРАВЛЕНО: было dish, стало dishes
+    String sql = "DELETE FROM dishes WHERE id = ? AND restaurant_id = ?";
 
     try (Connection conn = DatabaseConfig.getConnection();
          PreparedStatement stmt = conn.prepareStatement(sql)) {
 
       stmt.setLong(1, dishId);
       stmt.setLong(2, restaurantId);
-      stmt.executeUpdate();
+      int rowsDeleted = stmt.executeUpdate();
+      return rowsDeleted > 0;
 
     } catch (SQLException e) {
       e.printStackTrace();
@@ -53,7 +56,8 @@ public class MenuService implements MenuOperations {
 
   @Override
   public boolean updateDish(Long restaurantId, Dish updatedDish) {
-    String sql = "UPDATE dish SET name = ?, description = ?, price = ? WHERE id = ? AND restaurant_id = ?";
+    // ИСПРАВЛЕНО: было dish, стало dishes
+    String sql = "UPDATE dishes SET name = ?, description = ?, price = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND restaurant_id = ?";
 
     try (Connection conn = DatabaseConfig.getConnection();
          PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -64,7 +68,8 @@ public class MenuService implements MenuOperations {
       stmt.setLong(4, updatedDish.getId());
       stmt.setLong(5, restaurantId);
 
-      stmt.executeUpdate();
+      int rowsUpdated = stmt.executeUpdate();
+      return rowsUpdated > 0;
 
     } catch (SQLException e) {
       e.printStackTrace();
@@ -74,14 +79,16 @@ public class MenuService implements MenuOperations {
 
   @Override
   public boolean toggleDishAvailability(Long restaurantId, Long dishId) {
-    String sql = "UPDATE dish SET available = NOT available WHERE id = ? AND restaurant_id = ?";
+    // ИСПРАВЛЕНО: было dish, стало dishes
+    String sql = "UPDATE dishes SET available = NOT available, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND restaurant_id = ?";
 
     try (Connection conn = DatabaseConfig.getConnection();
          PreparedStatement stmt = conn.prepareStatement(sql)) {
 
       stmt.setLong(1, dishId);
       stmt.setLong(2, restaurantId);
-      stmt.executeUpdate();
+      int rowsUpdated = stmt.executeUpdate();
+      return rowsUpdated > 0;
 
     } catch (SQLException e) {
       e.printStackTrace();
@@ -92,7 +99,8 @@ public class MenuService implements MenuOperations {
   @Override
   public List<Dish> getMenuByRestaurantId(Long restaurantId) {
     List<Dish> dishes = new ArrayList<>();
-    String sql = "SELECT * FROM dish WHERE restaurant_id = ?";
+    // ИСПРАВЛЕНО: было dish, стало dishes
+    String sql = "SELECT * FROM dishes WHERE restaurant_id = ? ORDER BY name";
 
     try (Connection conn = DatabaseConfig.getConnection();
          PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -112,7 +120,8 @@ public class MenuService implements MenuOperations {
   @Override
   public List<Dish> getAvailableDishes(Long restaurantId) {
     List<Dish> dishes = new ArrayList<>();
-    String sql = "SELECT * FROM dish WHERE restaurant_id = ? AND available = true";
+    // ИСПРАВЛЕНО: было dish, стало dishes
+    String sql = "SELECT * FROM dishes WHERE restaurant_id = ? AND available = true ORDER BY name";
 
     try (Connection conn = DatabaseConfig.getConnection();
          PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -137,21 +146,128 @@ public class MenuService implements MenuOperations {
     dish.setPrice(rs.getBigDecimal("price"));
     dish.setAvailable(rs.getBoolean("available"));
     dish.setRestaurantId(rs.getLong("restaurant_id"));
+
+    // Добавляем дополнительные поля из вашей таблицы dishes
+    dish.setCategory(rs.getString("category"));
+    dish.setMenuCategoryId(rs.getLong("menu_category_id"));
+    if (rs.wasNull()) {
+      dish.setMenuCategoryId(null);
+    }
+    dish.setAvailableQuantity(rs.getInt("available_quantity"));
+    if (rs.wasNull()) {
+      dish.setAvailableQuantity(null);
+    }
+    dish.setPreparationTimeMin(rs.getInt("preparation_time_min"));
+    dish.setCalories(rs.getInt("calories"));
+    if (rs.wasNull()) {
+      dish.setCalories(null);
+    }
+    dish.setVegetarian(rs.getBoolean("is_vegetarian"));
+    dish.setSpicy(rs.getBoolean("is_spicy"));
+    dish.setImageUrl(rs.getString("image_url"));
+
+    Timestamp createdAt = rs.getTimestamp("created_at");
+    if (createdAt != null) {
+      dish.setCreatedAt(createdAt.toLocalDateTime());
+    }
+
+    Timestamp updatedAt = rs.getTimestamp("updated_at");
+    if (updatedAt != null) {
+      dish.setUpdatedAt(updatedAt.toLocalDateTime());
+    }
+
     return dish;
   }
 
-  // Эти методы можно оставить пустыми или удалить, если не используются
   public MenuCategory createCategory(Long restaurantId, String name, String description) {
+    // ИСПРАВЛЕНО: было menu_categories, но это правильно
+    String sql = "INSERT INTO menu_categories (name, description, restaurant_id, created_at) VALUES (?, ?, ?, CURRENT_TIMESTAMP) RETURNING *";
+
+    try (Connection conn = DatabaseConfig.getConnection();
+         PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+      stmt.setString(1, name);
+      stmt.setString(2, description);
+      stmt.setLong(3, restaurantId);
+
+      ResultSet rs = stmt.executeQuery();
+
+      if (rs.next()) {
+        MenuCategory category = new MenuCategory();
+        category.setId(rs.getLong("id"));
+        category.setName(rs.getString("name"));
+        category.setDescription(rs.getString("description"));
+        category.setRestaurantId(rs.getLong("restaurant_id"));
+
+        Timestamp createdAt = rs.getTimestamp("created_at");
+        if (createdAt != null) {
+          category.setCreatedAt(createdAt.toLocalDateTime());
+        }
+
+        return category;
+      }
+    } catch (SQLException e) {
+      e.printStackTrace();
+    }
     return null;
   }
 
   public void deleteCategory(Long restaurantId, Long categoryId) {
+    String sql = "DELETE FROM menu_categories WHERE id = ? AND restaurant_id = ?";
+
+    try (Connection conn = DatabaseConfig.getConnection();
+         PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+      stmt.setLong(1, categoryId);
+      stmt.setLong(2, restaurantId);
+      stmt.executeUpdate();
+    } catch (SQLException e) {
+      e.printStackTrace();
+    }
   }
 
   public List<MenuCategory> getCategoriesByRestaurantId(Long restaurantId) {
-    return new ArrayList<>();
+    List<MenuCategory> categories = new ArrayList<>();
+    String sql = "SELECT * FROM menu_categories WHERE restaurant_id = ? ORDER BY name";
+
+    try (Connection conn = DatabaseConfig.getConnection();
+         PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+      stmt.setLong(1, restaurantId);
+      ResultSet rs = stmt.executeQuery();
+
+      while (rs.next()) {
+        MenuCategory category = new MenuCategory();
+        category.setId(rs.getLong("id"));
+        category.setName(rs.getString("name"));
+        category.setDescription(rs.getString("description"));
+        category.setRestaurantId(rs.getLong("restaurant_id"));
+
+        Timestamp createdAt = rs.getTimestamp("created_at");
+        if (createdAt != null) {
+          category.setCreatedAt(createdAt.toLocalDateTime());
+        }
+
+        categories.add(category);
+      }
+    } catch (SQLException e) {
+      e.printStackTrace();
+    }
+    return categories;
   }
 
   public void addDishToCategory(Long restaurantId, Long categoryId, Dish dish) {
+    String sql = "UPDATE dishes SET menu_category_id = ? WHERE id = ? AND restaurant_id = ?";
+
+    try (Connection conn = DatabaseConfig.getConnection();
+         PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+      stmt.setLong(1, categoryId);
+      stmt.setLong(2, dish.getId());
+      stmt.setLong(3, restaurantId);
+      stmt.executeUpdate();
+    } catch (SQLException e) {
+      e.printStackTrace();
+    }
   }
 }

@@ -13,7 +13,7 @@ public class AuthService implements AuthOperations {
   private Restaurant currentRestaurant = null;
 
   public boolean isEmailExists(String email) {
-    String sql = "SELECT COUNT(*) FROM restaurant WHERE LOWER(email) = LOWER(?)";
+    String sql = "SELECT COUNT(*) FROM restaurants WHERE LOWER(email) = LOWER(?)";
 
     try (Connection conn = DatabaseConfig.getConnection();
          PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -31,7 +31,7 @@ public class AuthService implements AuthOperations {
   }
 
   public boolean isPhoneExists(String phone) {
-    String sql = "SELECT COUNT(*) FROM restaurant WHERE phone = ?";
+    String sql = "SELECT COUNT(*) FROM restaurants WHERE phone = ?";
 
     try (Connection conn = DatabaseConfig.getConnection();
          PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -48,9 +48,8 @@ public class AuthService implements AuthOperations {
     return false;
   }
 
-  // НОВЫЙ МЕТОД: проверка уникальности названия ресторана
   public boolean isRestaurantNameExists(String name) {
-    String sql = "SELECT COUNT(*) FROM restaurant WHERE LOWER(TRIM(name)) = LOWER(TRIM(?))";
+    String sql = "SELECT COUNT(*) FROM restaurants WHERE LOWER(TRIM(name)) = LOWER(TRIM(?))";
 
     try (Connection conn = DatabaseConfig.getConnection();
          PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -67,9 +66,8 @@ public class AuthService implements AuthOperations {
     return false;
   }
 
-  // НОВЫЙ МЕТОД: проверка уникальности адреса ресторана
   public boolean isRestaurantAddressExists(String address) {
-    String sql = "SELECT COUNT(*) FROM restaurant WHERE LOWER(TRIM(address)) = LOWER(TRIM(?))";
+    String sql = "SELECT COUNT(*) FROM restaurants WHERE LOWER(TRIM(address)) = LOWER(TRIM(?))";
 
     try (Connection conn = DatabaseConfig.getConnection();
          PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -86,10 +84,9 @@ public class AuthService implements AuthOperations {
     return false;
   }
 
-  // НОВЫЙ МЕТОД: поиск похожих названий ресторанов
   public List<String> findSimilarRestaurantNames(String name) {
     List<String> similarNames = new ArrayList<>();
-    String sql = "SELECT name FROM restaurant WHERE LOWER(name) LIKE LOWER(?) LIMIT 5";
+    String sql = "SELECT name FROM restaurants WHERE LOWER(name) LIKE LOWER(?) LIMIT 5";
 
     try (Connection conn = DatabaseConfig.getConnection();
          PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -109,7 +106,6 @@ public class AuthService implements AuthOperations {
   @Override
   public Restaurant registerRestaurant(String name, String email, String password,
                                        String phone, String address, String cuisineType) {
-    // Валидация входных данных
     if (name == null || name.trim().isEmpty()) {
       throw new IllegalArgumentException("Название ресторана не может быть пустым");
     }
@@ -122,7 +118,6 @@ public class AuthService implements AuthOperations {
       throw new IllegalArgumentException("Неверный формат email");
     }
 
-    // Проверка уникальности данных
     if (isEmailExists(email)) {
       throw new IllegalArgumentException("Email уже используется другим рестораном");
     }
@@ -139,7 +134,8 @@ public class AuthService implements AuthOperations {
       throw new IllegalArgumentException("По этому адресу уже зарегистрирован ресторан. Пожалуйста, уточните адрес");
     }
 
-    String sql = "INSERT INTO restaurant (name, email, password, phone, address, cuisine_type, status) VALUES (?, ?, ?, ?, ?, ?, 'PENDING') RETURNING *";
+    // ИСПРАВЛЕНО: было restaurant, стало restaurants
+    String sql = "INSERT INTO restaurants (name, email, password, phone, address, cuisine_type, status, registration_date) VALUES (?, ?, ?, ?, ?, ?, 'PENDING', CURRENT_TIMESTAMP) RETURNING *";
 
     try (Connection conn = DatabaseConfig.getConnection();
          PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -159,14 +155,13 @@ public class AuthService implements AuthOperations {
         return restaurant;
       }
     } catch (SQLException e) {
-      if (e.getSQLState().equals("23505")) { // PostgreSQL error code for unique violation
-        // Анализируем сообщение об ошибке для уточнения
+      if (e.getSQLState().equals("23505")) {
         String errorMessage = e.getMessage();
-        if (errorMessage.contains("restaurant_email_key")) {
+        if (errorMessage.contains("restaurants_email_key")) {
           throw new IllegalArgumentException("Email уже используется другим рестораном");
-        } else if (errorMessage.contains("restaurant_phone_key")) {
+        } else if (errorMessage.contains("restaurants_phone_key")) {
           throw new IllegalArgumentException("Телефон уже используется другим рестораном");
-        } else if (errorMessage.contains("restaurant_name_address_key")) {
+        } else if (errorMessage.contains("restaurants_name_address_key")) {
           throw new IllegalArgumentException("Ресторан с таким названием и адресом уже существует");
         } else {
           throw new IllegalArgumentException("Нарушение уникальности данных: " + errorMessage);
@@ -185,7 +180,8 @@ public class AuthService implements AuthOperations {
       return null;
     }
 
-    String sql = "SELECT * FROM restaurant WHERE LOWER(email) = LOWER(?) AND password = ?";
+    // ИСПРАВЛЕНО: было restaurant, стало restaurants
+    String sql = "SELECT * FROM restaurants WHERE LOWER(email) = LOWER(?) AND password = ?";
 
     try (Connection conn = DatabaseConfig.getConnection();
          PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -196,7 +192,6 @@ public class AuthService implements AuthOperations {
       ResultSet rs = stmt.executeQuery();
 
       if (rs.next()) {
-        // Проверяем статус ресторана
         String status = rs.getString("status");
         if ("PENDING".equals(status)) {
           System.out.println("⚠️  Ваш ресторан еще не прошел модерацию. Ожидайте подтверждения.");
@@ -238,7 +233,8 @@ public class AuthService implements AuthOperations {
       return false;
     }
 
-    String sql = "UPDATE restaurant SET password = ? WHERE id = ? AND password = ?";
+    // ИСПРАВЛЕНО: было restaurant, стало restaurants
+    String sql = "UPDATE restaurants SET password = ? WHERE id = ? AND password = ?";
 
     try (Connection conn = DatabaseConfig.getConnection();
          PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -272,10 +268,10 @@ public class AuthService implements AuthOperations {
       return;
     }
 
-    // Генерация временного пароля
     String tempPassword = generateTemporaryPassword();
 
-    String sql = "UPDATE restaurant SET password = ? WHERE LOWER(email) = LOWER(?)";
+    // ИСПРАВЛЕНО: было restaurant, стало restaurants
+    String sql = "UPDATE restaurants SET password = ? WHERE LOWER(email) = LOWER(?)";
 
     try (Connection conn = DatabaseConfig.getConnection();
          PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -296,13 +292,13 @@ public class AuthService implements AuthOperations {
   }
 
   private String generateTemporaryPassword() {
-    // Генерация простого временного пароля
     return "temp" + System.currentTimeMillis() % 10000;
   }
 
   public static List<Restaurant> getAllRestaurants() {
     List<Restaurant> restaurants = new ArrayList<>();
-    String sql = "SELECT * FROM restaurant ORDER BY name";
+    // ИСПРАВЛЕНО: было restaurant, стало restaurants
+    String sql = "SELECT * FROM restaurants ORDER BY name";
 
     try (Connection conn = DatabaseConfig.getConnection();
          Statement stmt = conn.createStatement();
@@ -318,7 +314,8 @@ public class AuthService implements AuthOperations {
   }
 
   public static Restaurant getRestaurantById(Long id) {
-    String sql = "SELECT * FROM restaurant WHERE id = ?";
+    // ИСПРАВЛЕНО: было restaurant, стало restaurants
+    String sql = "SELECT * FROM restaurants WHERE id = ?";
 
     try (Connection conn = DatabaseConfig.getConnection();
          PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -336,7 +333,8 @@ public class AuthService implements AuthOperations {
   }
 
   private void updateLastLogin(Long restaurantId) {
-    String sql = "UPDATE restaurant SET last_login_date = CURRENT_TIMESTAMP WHERE id = ?";
+    // ИСПРАВЛЕНО: было restaurant, стало restaurants
+    String sql = "UPDATE restaurants SET last_login_date = CURRENT_TIMESTAMP WHERE id = ?";
 
     try (Connection conn = DatabaseConfig.getConnection();
          PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -348,7 +346,7 @@ public class AuthService implements AuthOperations {
     }
   }
 
-  private static Restaurant mapResultSetToRestaurant(ResultSet rs) throws SQLException {
+  public static Restaurant mapResultSetToRestaurant(ResultSet rs) throws SQLException {
     Restaurant restaurant = new Restaurant();
     restaurant.setId(rs.getLong("id"));
     restaurant.setName(rs.getString("name"));
@@ -359,14 +357,30 @@ public class AuthService implements AuthOperations {
     restaurant.setCuisineType(rs.getString("cuisine_type"));
     restaurant.setDescription(rs.getString("description"));
     restaurant.setStatus(rs.getString("status"));
-    restaurant.setRegistrationDate(rs.getTimestamp("registration_date").toLocalDateTime());
+    restaurant.setIsActive(rs.getBoolean("is_active"));
+    restaurant.setEmailVerified(rs.getBoolean("email_verified"));
+    restaurant.setRating(rs.getBigDecimal("rating"));
+    restaurant.setDeliveryTime(rs.getInt("delivery_time"));
+    restaurant.setMinOrderAmount(rs.getBigDecimal("min_order_amount"));
+
+    Timestamp regDate = rs.getTimestamp("registration_date");
+    restaurant.setRegistrationDate(regDate != null ? regDate.toLocalDateTime() : null);
 
     Timestamp lastLogin = rs.getTimestamp("last_login_date");
     if (lastLogin != null) {
       restaurant.setLastLoginDate(lastLogin.toLocalDateTime());
     }
 
-    restaurant.setEmailVerified(rs.getBoolean("email_verified"));
+    Timestamp createdAt = rs.getTimestamp("created_at");
+    if (createdAt != null) {
+      restaurant.setCreatedAt(createdAt.toLocalDateTime());
+    }
+
+    Timestamp updatedAt = rs.getTimestamp("updated_at");
+    if (updatedAt != null) {
+      restaurant.setUpdatedAt(updatedAt.toLocalDateTime());
+    }
+
     return restaurant;
   }
 
