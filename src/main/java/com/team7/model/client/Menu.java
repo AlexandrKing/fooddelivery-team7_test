@@ -36,6 +36,7 @@ public class Menu {
     }
 
     public void setName(int cookingTime) {
+
     }
 
     public void setName(String name) {
