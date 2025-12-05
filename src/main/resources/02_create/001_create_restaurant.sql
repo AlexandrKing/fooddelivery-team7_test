@@ -1,5 +1,5 @@
 -- Создание таблицы ресторанов
-CREATE TABLE restaurant (
+CREATE TABLE IF NOT EXISTS restaurant (
     id BIGSERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     email VARCHAR(255) UNIQUE NOT NULL,

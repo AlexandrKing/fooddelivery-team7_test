@@ -1,5 +1,5 @@
 -- Создание таблицы категорий меню
-CREATE TABLE menu_category (
+CREATE TABLE IF NOT EXISTS menu_category (
     id BIGSERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     description TEXT,

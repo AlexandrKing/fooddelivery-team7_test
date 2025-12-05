@@ -1,5 +1,5 @@
 -- Создание таблицы блюд
-CREATE TABLE dish (
+CREATE TABLE IF NOT EXISTS dish (
     id BIGSERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     description TEXT,
