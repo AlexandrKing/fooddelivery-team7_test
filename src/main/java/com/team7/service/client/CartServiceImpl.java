@@ -16,9 +16,9 @@ public class CartServiceImpl implements CartService {
 
     @Override
     public Cart getCart(Long userId) {
-        String cartSql = "SELECT * FROM client_carts WHERE user_id = ?";
-        String itemsSql = "SELECT ci.*, m.name, m.price FROM client_cart_items ci " +
-            "JOIN client_menu m ON ci.menu_item_id = m.id " +
+        String cartSql = "SELECT * FROM carts WHERE user_id = ?";
+        String itemsSql = "SELECT ci.*, m.name, m.price FROM cart_items ci " +
+            "JOIN menu m ON ci.menu_item_id = m.id " +
             "WHERE ci.cart_id = ?";
 
         try (Connection conn = DatabaseConfig.getConnection();
@@ -64,7 +64,7 @@ public class CartServiceImpl implements CartService {
                 cart = createNewCartInDb(userId, restaurantId, conn);
             }
 
-            String checkSql = "SELECT * FROM client_cart_items WHERE cart_id = ? AND menu_item_id = ?";
+            String checkSql = "SELECT * FROM cart_items WHERE cart_id = ? AND menu_item_id = ?";
             try (PreparedStatement checkStmt = conn.prepareStatement(checkSql)) {
                 checkStmt.setLong(1, cart.getId());
                 checkStmt.setLong(2, menuItemId);
@@ -141,7 +141,7 @@ public class CartServiceImpl implements CartService {
                 throw new IllegalArgumentException("Корзина не найдена");
             }
 
-            String sql = "DELETE FROM client_cart_items WHERE id = ? AND cart_id = ?";
+            String sql = "DELETE FROM cart_items WHERE id = ? AND cart_id = ?";
             try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
                 pstmt.setLong(1, itemId);
                 pstmt.setLong(2, cart.getId());
@@ -177,13 +177,13 @@ public class CartServiceImpl implements CartService {
                 return createNewCart(userId);
             }
 
-            String sql = "DELETE FROM client_cart_items WHERE cart_id = ?";
+            String sql = "DELETE FROM cart_items WHERE cart_id = ?";
             try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
                 pstmt.setLong(1, cart.getId());
                 pstmt.executeUpdate();
             }
 
-            String updateSql = "UPDATE client_carts SET total_amount = 0 WHERE id = ?";
+            String updateSql = "UPDATE carts SET total_amount = 0 WHERE id = ?";
             try (PreparedStatement pstmt = conn.prepareStatement(updateSql)) {
                 pstmt.setLong(1, cart.getId());
                 pstmt.executeUpdate();
@@ -213,7 +213,7 @@ public class CartServiceImpl implements CartService {
     }
 
     private Cart createNewCartInDb(Long userId, Long restaurantId, Connection conn) throws SQLException {
-        String sql = "INSERT INTO client_carts (user_id, restaurant_id, total_amount) VALUES (?, ?, 0)";
+        String sql = "INSERT INTO carts (user_id, restaurant_id, total_amount) VALUES (?, ?, 0)";
         try (PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             pstmt.setLong(1, userId);
             pstmt.setLong(2, restaurantId);
@@ -235,7 +235,7 @@ public class CartServiceImpl implements CartService {
     }
 
     private void addNewItemToCart(Long cartId, Long menuItemId, Integer quantity, Connection conn) throws SQLException {
-        String sql = "INSERT INTO client_cart_items (cart_id, menu_item_id, quantity) VALUES (?, ?, ?)";
+        String sql = "INSERT INTO cart_items (cart_id, menu_item_id, quantity) VALUES (?, ?, ?)";
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setLong(1, cartId);
             pstmt.setLong(2, menuItemId);
@@ -245,7 +245,7 @@ public class CartServiceImpl implements CartService {
     }
 
     private void updateItemQuantityInDb(Long cartId, Long itemId, Integer quantity, Connection conn) throws SQLException {
-        String sql = "UPDATE client_cart_items SET quantity = ? WHERE id = ? AND cart_id = ?";
+        String sql = "UPDATE cart_items SET quantity = ? WHERE id = ? AND cart_id = ?";
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setInt(1, quantity);
             pstmt.setLong(2, itemId);
@@ -258,10 +258,10 @@ public class CartServiceImpl implements CartService {
     }
 
     private void updateCartTotalAmount(Long cartId, Connection conn) throws SQLException {
-        String sql = "UPDATE client_carts SET total_amount = (" +
+        String sql = "UPDATE carts SET total_amount = (" +
             "SELECT COALESCE(SUM(ci.quantity * m.price), 0) " +
-            "FROM client_cart_items ci " +
-            "JOIN client_menu m ON ci.menu_item_id = m.id " +
+            "FROM cart_items ci " +
+            "JOIN menu m ON ci.menu_item_id = m.id " +
             "WHERE ci.cart_id = ?" +
             ") WHERE id = ?";
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {

@@ -17,7 +17,7 @@ public class RestaurantServiceImpl implements RestaurantService {
     @Override
     public List<Restaurant> getRestaurants() {
         List<Restaurant> restaurants = new ArrayList<>();
-        String sql = "SELECT * FROM client_restaurants WHERE is_active = true";
+        String sql = "SELECT * FROM restaurants WHERE is_active = true";
 
         try (Connection conn = DatabaseConfig.getConnection();
              Statement stmt = conn.createStatement();
@@ -44,7 +44,7 @@ public class RestaurantServiceImpl implements RestaurantService {
 
     @Override
     public Restaurant getRestaurantById(Long id) {
-        String sql = "SELECT * FROM client_restaurants WHERE id = ? AND is_active = true";
+        String sql = "SELECT * FROM restaurants WHERE id = ? AND is_active = true";
 
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -74,7 +74,7 @@ public class RestaurantServiceImpl implements RestaurantService {
     @Override
     public List<Restaurant> filterRestaurants(Double rating, Integer deliveryTime) {
         List<Restaurant> restaurants = new ArrayList<>();
-        StringBuilder sql = new StringBuilder("SELECT * FROM client_restaurants WHERE is_active = true");
+        StringBuilder sql = new StringBuilder("SELECT * FROM restaurants WHERE is_active = true");
 
         List<Object> params = new ArrayList<>();
 
@@ -123,7 +123,7 @@ public class RestaurantServiceImpl implements RestaurantService {
     @Override
     public List<Menu> getMenu(Long restaurantId) {
         List<Menu> menu = new ArrayList<>();
-        String sql = "SELECT * FROM client_menu WHERE restaurant_id = ? AND is_available = true";
+        String sql = "SELECT * FROM menu WHERE restaurant_id = ? AND is_available = true";
 
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {

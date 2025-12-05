@@ -134,7 +134,7 @@ public class ClientUserStories {
         String confirmPassword = scanner.nextLine();
 
         try {
-            User user = authService.register(UserRole.CLIENT, name, email, phone, password, confirmPassword);
+            User user = authService.register(name, email, phone, password, confirmPassword);
             if (user != null) {
                 currentUser = user;
                 System.out.println("✅ РЕГИСТРАЦИЯ УСПЕШНА!");

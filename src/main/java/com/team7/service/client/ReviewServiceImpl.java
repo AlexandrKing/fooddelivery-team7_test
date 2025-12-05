@@ -24,7 +24,7 @@ public class ReviewServiceImpl implements ReviewService {
             throw new IllegalArgumentException("Рейтинг курьера должен быть от 1 до 5");
         }
 
-        String sql = "INSERT INTO client_reviews (order_id, user_id, restaurant_id, courier_id, restaurant_rating, courier_rating, comment, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO reviews (order_id, user_id, restaurant_id, courier_id, restaurant_rating, courier_rating, comment, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
 
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
@@ -78,7 +78,7 @@ public class ReviewServiceImpl implements ReviewService {
     @Override
     public List<Review> getReviews(Long userId) {
         List<Review> reviews = new ArrayList<>();
-        String sql = "SELECT * FROM client_reviews WHERE user_id = ?";
+        String sql = "SELECT * FROM reviews WHERE user_id = ?";
 
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -109,7 +109,7 @@ public class ReviewServiceImpl implements ReviewService {
 
     @Override
     public Double getRestaurantRating(Long restaurantId) {
-        String sql = "SELECT AVG(restaurant_rating) as avg_rating FROM client_reviews WHERE restaurant_id = ? AND restaurant_rating IS NOT NULL";
+        String sql = "SELECT AVG(restaurant_rating) as avg_rating FROM reviews WHERE restaurant_id = ? AND restaurant_rating IS NOT NULL";
 
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -131,7 +131,7 @@ public class ReviewServiceImpl implements ReviewService {
 
     @Override
     public Double getCourierRating(Long courierId) {
-        String sql = "SELECT AVG(courier_rating) as avg_rating FROM client_reviews WHERE courier_id = ? AND courier_rating IS NOT NULL";
+        String sql = "SELECT AVG(courier_rating) as avg_rating FROM reviews WHERE courier_id = ? AND courier_rating IS NOT NULL";
 
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {

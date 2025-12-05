@@ -32,7 +32,7 @@ public class OrderServiceImpl implements OrderService {
             conn.setAutoCommit(false);
 
             // Создаем заказ
-            String orderSql = "INSERT INTO client_orders (user_id, restaurant_id, delivery_address, " +
+            String orderSql = "INSERT INTO orders (user_id, restaurant_id, delivery_address, " +
                 "delivery_type, delivery_time, payment_method, status, total_amount) " +
                 "VALUES (?, ?, ?, ?::delivery_type, ?, ?::payment_method, ?::order_status, ?) " +
                 "RETURNING id, created_at";
@@ -56,7 +56,7 @@ public class OrderServiceImpl implements OrderService {
                 LocalDateTime createdAt = rs.getTimestamp("created_at").toLocalDateTime();
 
                 // Добавляем товары в заказ
-                String itemSql = "INSERT INTO client_order_items (order_id, menu_item_id, name, price, quantity) " +
+                String itemSql = "INSERT INTO order_items (order_id, menu_item_id, name, price, quantity) " +
                     "VALUES (?, ?, ?, ?, ?)";
 
                 try (PreparedStatement itemStmt = conn.prepareStatement(itemSql)) {
@@ -72,7 +72,7 @@ public class OrderServiceImpl implements OrderService {
                 }
 
                 // Добавляем запись в историю статусов
-                String historySql = "INSERT INTO client_order_status_history (order_id, status) VALUES (?, ?::order_status)";
+                String historySql = "INSERT INTO order_status_history (order_id, status) VALUES (?, ?::order_status)";
                 try (PreparedStatement historyStmt = conn.prepareStatement(historySql)) {
                     historyStmt.setLong(1, orderId);
                     historyStmt.setString(2, OrderStatus.PENDING.toString());
@@ -113,7 +113,7 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public Order getOrder(Long orderId) {
-        String sql = "SELECT * FROM client_orders WHERE id = ?";
+        String sql = "SELECT * FROM orders WHERE id = ?";
 
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -149,7 +149,7 @@ public class OrderServiceImpl implements OrderService {
     @Override
     public List<Order> getUserOrders(Long userId) {
         List<Order> orders = new ArrayList<>();
-        String sql = "SELECT * FROM client_orders WHERE user_id = ? ORDER BY created_at DESC";
+        String sql = "SELECT * FROM orders WHERE user_id = ? ORDER BY created_at DESC";
 
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -180,7 +180,7 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public Order cancelOrder(Long orderId) {
-        String sql = "UPDATE client_orders SET status = ?::order_status WHERE id = ? AND status = ?::order_status";
+        String sql = "UPDATE orders SET status = ?::order_status WHERE id = ? AND status = ?::order_status";
 
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -192,7 +192,7 @@ public class OrderServiceImpl implements OrderService {
             int rows = pstmt.executeUpdate();
             if (rows > 0) {
                 // Добавляем запись в историю статусов
-                String historySql = "INSERT INTO client_order_status_history (order_id, status) VALUES (?, ?::order_status)";
+                String historySql = "INSERT INTO order_status_history (order_id, status) VALUES (?, ?::order_status)";
                 try (PreparedStatement historyStmt = conn.prepareStatement(historySql)) {
                     historyStmt.setLong(1, orderId);
                     historyStmt.setString(2, OrderStatus.CANCELLED.toString());
@@ -226,7 +226,7 @@ public class OrderServiceImpl implements OrderService {
 
     private List<OrderItem> getOrderItems(Long orderId, Connection conn) throws SQLException {
         List<OrderItem> items = new ArrayList<>();
-        String sql = "SELECT * FROM client_order_items WHERE order_id = ?";
+        String sql = "SELECT * FROM order_items WHERE order_id = ?";
 
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setLong(1, orderId);

@@ -16,7 +16,7 @@ public class MenuServiceImpl implements MenuService {
   @Override
   public List<Menu> getMenu(Long restaurantId) {
     List<Menu> menu = new ArrayList<>();
-    String sql = "SELECT * FROM client_menu WHERE restaurant_id = ? AND is_available = true";
+    String sql = "SELECT * FROM menu_categories WHERE restaurant_id = ? AND is_available = true";
 
     try (Connection conn = DatabaseConfig.getConnection();
          PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -61,7 +61,7 @@ public class MenuServiceImpl implements MenuService {
 
   @Override
   public Menu getMenuItem(Long restaurantId, Long itemId) {
-    String sql = "SELECT * FROM client_menu WHERE restaurant_id = ? AND id = ? AND is_available = true";
+    String sql = "SELECT * FROM menu_categories WHERE restaurant_id = ? AND id = ? AND is_available = true";
 
     try (Connection conn = DatabaseConfig.getConnection();
          PreparedStatement pstmt = conn.prepareStatement(sql)) {
