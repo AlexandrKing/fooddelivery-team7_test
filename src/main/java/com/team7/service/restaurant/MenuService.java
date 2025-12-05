@@ -13,7 +13,7 @@ public class MenuService implements MenuOperations {
   @Override
   public Dish addDishToMenu(Long restaurantId, Dish dish) {
     // ИСПРАВЛЕНО: было dish, стало dishes
-    String sql = "INSERT INTO dishes (name, description, price, available, restaurant_id, created_at) VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP) RETURNING *";
+    String sql = "INSERT INTO dishes (name, description, price, is_available, restaurant_id, created_at) VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP) RETURNING *";
 
     try (Connection conn = DatabaseConfig.getConnection();
          PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -80,7 +80,7 @@ public class MenuService implements MenuOperations {
   @Override
   public boolean toggleDishAvailability(Long restaurantId, Long dishId) {
     // ИСПРАВЛЕНО: было dish, стало dishes
-    String sql = "UPDATE dishes SET available = NOT available, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND restaurant_id = ?";
+    String sql = "UPDATE dishes SET is_available = NOT is_available, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND restaurant_id = ?";
 
     try (Connection conn = DatabaseConfig.getConnection();
          PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -121,7 +121,7 @@ public class MenuService implements MenuOperations {
   public List<Dish> getAvailableDishes(Long restaurantId) {
     List<Dish> dishes = new ArrayList<>();
     // ИСПРАВЛЕНО: было dish, стало dishes
-    String sql = "SELECT * FROM dishes WHERE restaurant_id = ? AND available = true ORDER BY name";
+    String sql = "SELECT * FROM dishes WHERE restaurant_id = ? AND is_available = true ORDER BY name";
 
     try (Connection conn = DatabaseConfig.getConnection();
          PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -141,10 +141,11 @@ public class MenuService implements MenuOperations {
   private Dish mapResultSetToDish(ResultSet rs) throws SQLException {
     Dish dish = new Dish();
     dish.setId(rs.getLong("id"));
+    System.out.println("DEBUG: Mapped dish ID = " + dish.getId());
     dish.setName(rs.getString("name"));
     dish.setDescription(rs.getString("description"));
     dish.setPrice(rs.getBigDecimal("price"));
-    dish.setAvailable(rs.getBoolean("available"));
+    dish.setAvailable(rs.getBoolean("is_available"));
     dish.setRestaurantId(rs.getLong("restaurant_id"));
 
     // Добавляем дополнительные поля из вашей таблицы dishes
