@@ -1,8 +1,10 @@
 package com.team7.model.restaurant;
 
 import lombok.Data;
-import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
+
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -20,9 +22,15 @@ public class Restaurant {
   private String cuisineType;
   private String description;
   private String status;
+  private Boolean isActive;
+  private Boolean emailVerified;
+  private BigDecimal rating;
+  private Integer deliveryTime;
+  private BigDecimal minOrderAmount;
   private LocalDateTime registrationDate;
   private LocalDateTime lastLoginDate;
-  private Boolean emailVerified;
+  private LocalDateTime createdAt;
+  private LocalDateTime updatedAt;
   private List<Dish> menu = new ArrayList<>();
   private List<MenuCategory> menuCategories = new ArrayList<>();
 
@@ -36,9 +44,32 @@ public class Restaurant {
     this.address = address;
     this.cuisineType = cuisineType;
     this.status = "PENDING";
-    this.registrationDate = LocalDateTime.now();
+    this.isActive = true;
     this.emailVerified = false;
+    this.rating = BigDecimal.ZERO;
+    this.deliveryTime = 30;
+    this.minOrderAmount = BigDecimal.ZERO;
+    this.registrationDate = LocalDateTime.now();
+    this.createdAt = LocalDateTime.now();
+    this.updatedAt = LocalDateTime.now();
     this.menu = new ArrayList<>();
     this.menuCategories = new ArrayList<>();
+  }
+
+  // Геттеры для совместимости с существующим кодом
+  public String getCuisineType() {
+    return cuisineType;
+  }
+
+  public void setCuisineType(String cuisineType) {
+    this.cuisineType = cuisineType;
+  }
+
+  public Boolean getEmailVerified() {
+    return emailVerified;
+  }
+
+  public void setEmailVerified(Boolean emailVerified) {
+    this.emailVerified = emailVerified;
   }
 }
