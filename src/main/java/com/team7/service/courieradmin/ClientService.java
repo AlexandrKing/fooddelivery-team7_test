@@ -40,7 +40,7 @@ public class ClientService {
 
   public List<Client> getAllClients() {
     List<Client> clients = new ArrayList<>();
-    String sql = "SELECT * FROM client_users ORDER BY created_at DESC";
+    String sql = "SELECT * FROM users ORDER BY created_at DESC";
 
     try (Connection conn = DatabaseConfig.getConnection();
          Statement stmt = conn.createStatement();
