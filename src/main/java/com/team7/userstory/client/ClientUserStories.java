@@ -456,8 +456,11 @@ public class ClientUserStories {
                         addToCartFromMenu(menu, cartService, scanner);
                         break;
                     case 2:
-                        inMenu = false;
-                        // Корзину обработаем в главном меню
+                        Restaurant savedRestaurant = currentRestaurant;
+                        manageCart(cartService, null, scanner);
+                        if (currentRestaurant == null && savedRestaurant != null) {
+                            currentRestaurant = savedRestaurant;
+                        }
                         break;
                     case 3:
                         currentRestaurant = null;
