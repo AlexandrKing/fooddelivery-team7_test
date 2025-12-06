@@ -2,7 +2,6 @@ package com.team7.service.courieradmin;
 
 import com.team7.model.courier.Courier;
 import com.team7.service.config.DatabaseConfig;
-import org.mindrot.jbcrypt.BCrypt;
 
 import java.math.BigDecimal;
 import java.sql.*;
@@ -12,7 +11,7 @@ import java.util.List;
 public class CourierService {
 
     public Courier login(String username, String password) {
-        // Используем правильное имя таблицы - courier_users
+        // Используем колонку 'password' вместо 'password_hash'
         String sql = "SELECT * FROM courier_users WHERE username = ? AND is_active = TRUE";
 
         try (Connection conn = DatabaseConfig.getConnection();
@@ -22,24 +21,11 @@ public class CourierService {
             ResultSet rs = stmt.executeQuery();
 
             if (rs.next()) {
-                // ВНИМАНИЕ: В ваших тестовых данных используется колонка password, а не password_hash
-                // Проверяем обе возможности
-                String storedHash = null;
+                // Получаем пароль из колонки 'password'
+                String storedPassword = rs.getString("password");
 
-                // Пробуем получить password_hash
-                try {
-                    storedHash = rs.getString("password_hash");
-                } catch (SQLException e) {
-                    // Если колонки нет, пробуем password
-                    storedHash = rs.getString("password");
-                }
-
-                // Если все равно null, ищем в других возможных колонках
-                if (storedHash == null) {
-                    storedHash = rs.getString("password");
-                }
-
-                if (storedHash != null && BCrypt.checkpw(password, storedHash)) {
+                // ПРЯМОЕ СРАВНЕНИЕ ПАРОЛЕЙ (без BCrypt)
+                if (storedPassword != null && password.equals(storedPassword)) {
                     Courier courier = mapResultSetToCourier(rs);
                     updateLastLogin(courier.getId());
                     System.out.println("✅ Успешный вход курьера: " + username);
@@ -92,19 +78,16 @@ public class CourierService {
             throw e; // Пробрасываем дальше для обработки в UI
         }
 
-        // Используем правильное имя таблицы - courier_users
-        // ВНИМАНИЕ: В ваших тестовых данных колонка называется password, а не password_hash
-        // Проверим структуру таблицы и используем правильные имена колонок
-        String sql = "INSERT INTO courier_users (username, password_hash, full_name, email, phone, vehicle_type, status, rating, completed_orders, balance, is_active) " +
+        // Используем колонку 'password' вместо 'password_hash'
+        String sql = "INSERT INTO courier_users (username, password, full_name, email, phone, vehicle_type, status, rating, completed_orders, balance, is_active) " +
                 "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
-            String hashedPassword = BCrypt.hashpw(password, BCrypt.gensalt());
-
+            // Сохраняем пароль как есть (без хэширования)
             stmt.setString(1, username);
-            stmt.setString(2, hashedPassword); // password_hash
+            stmt.setString(2, password); // password
             stmt.setString(3, fullName);
             stmt.setString(4, email);
             stmt.setString(5, phone);
@@ -136,53 +119,8 @@ public class CourierService {
         } catch (SQLException e) {
             System.err.println("Ошибка регистрации курьера: " + e.getMessage());
             e.printStackTrace();
-
-            // Пробуем альтернативный вариант с колонкой password вместо password_hash
-            if (e.getMessage().contains("password_hash")) {
-                System.out.println("Пробуем с колонкой 'password' вместо 'password_hash'...");
-                return registerCourierAlternative(username, password, fullName, email, phone, vehicleType);
-            }
+            return false;
         }
-
-        return false;
-    }
-
-    private boolean registerCourierAlternative(String username, String password, String fullName,
-                                               String email, String phone, String vehicleType) {
-        // Альтернативный вариант с колонкой password
-        String sql = "INSERT INTO courier_users (username, password, full_name, email, phone, vehicle_type, status, rating, completed_orders, balance, is_active) " +
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-
-        try (Connection conn = DatabaseConfig.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
-
-            String hashedPassword = BCrypt.hashpw(password, BCrypt.gensalt());
-
-            stmt.setString(1, username);
-            stmt.setString(2, hashedPassword); // password
-            stmt.setString(3, fullName);
-            stmt.setString(4, email);
-            stmt.setString(5, phone);
-            stmt.setString(6, vehicleType != null ? vehicleType : "bicycle");
-            stmt.setString(7, "offline");
-            stmt.setBigDecimal(8, new BigDecimal("0.0"));
-            stmt.setInt(9, 0);
-            stmt.setBigDecimal(10, new BigDecimal("0.00"));
-            stmt.setBoolean(11, true);
-
-            int affectedRows = stmt.executeUpdate();
-
-            if (affectedRows > 0) {
-                System.out.println("✅ Курьер успешно зарегистрирован (альтернативный метод): " + username);
-                return true;
-            }
-
-        } catch (SQLException e) {
-            System.err.println("Ошибка регистрации курьера (альтернативный метод): " + e.getMessage());
-            e.printStackTrace();
-        }
-
-        return false;
     }
 
     private boolean isUsernameExists(String username) {
@@ -485,12 +423,8 @@ public class CourierService {
             courier.setUsername(rs.getString("username"));
             courier.setEmail(rs.getString("email"));
 
-            // Пробуем получить password_hash или password
-            try {
-                courier.setPasswordHash(rs.getString("password_hash"));
-            } catch (SQLException e) {
-                courier.setPasswordHash(rs.getString("password"));
-            }
+            // Получаем пароль из колонки 'password'
+            courier.setPasswordHash(rs.getString("password"));
 
             courier.setFullName(rs.getString("full_name"));
             courier.setPhone(rs.getString("phone"));
@@ -537,13 +471,13 @@ public class CourierService {
         return courier;
     }
 
-    // Дополнительный метод для создания таблицы если её нет
+    // Метод для создания таблицы если её нет
     public static boolean createTableIfNotExists() {
         String sql = "CREATE TABLE IF NOT EXISTS courier_users (" +
                 "id SERIAL PRIMARY KEY," +
                 "username VARCHAR(50) UNIQUE NOT NULL," +
                 "email VARCHAR(100) UNIQUE NOT NULL," +
-                "password_hash VARCHAR(255) NOT NULL," +
+                "password VARCHAR(255) NOT NULL," + // Изменено с password_hash на password
                 "full_name VARCHAR(100) NOT NULL," +
                 "phone VARCHAR(20)," +
                 "vehicle_type VARCHAR(20)," +

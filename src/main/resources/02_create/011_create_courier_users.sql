@@ -1,8 +1,9 @@
+-- Создание таблицы курьеров с колонкой 'password' вместо 'password_hash'
 CREATE TABLE IF NOT EXISTS courier_users (
     id BIGSERIAL PRIMARY KEY,
     username VARCHAR(50) UNIQUE NOT NULL,
     email VARCHAR(100) UNIQUE NOT NULL,
-    password_hash VARCHAR(255) NOT NULL,
+    password VARCHAR(255) NOT NULL,  -- Изменено с password_hash на password
     full_name VARCHAR(100) NOT NULL,
     phone VARCHAR(20) NOT NULL,
     vehicle_type VARCHAR(50),
