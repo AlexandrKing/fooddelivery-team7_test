@@ -13,10 +13,10 @@ public class    Main {
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
 
-        System.out.println("╔════════════════════════════════════════════════════════════╗");
-        System.out.println("║              🍽️ СИСТЕМА ДОСТАВКИ ЕДЫ 🚚                  ║");
-        System.out.println("║                     Версия 1.0.0                           ║");
-        System.out.println("╚════════════════════════════════════════════════════════════╝");
+        System.out.println("╔══════════════════════════════════════════════════════════╗");
+        System.out.println("║                  СИСТЕМА ДОСТАВКИ ЕДЫ                    ║");
+        System.out.println("║                     Версия 1.0.0                         ║");
+        System.out.println("╚══════════════════════════════════════════════════════════╝");
 
         System.out.println("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
         System.out.println("🏃 ПОСЛЕДОВАТЕЛЬНОСТЬ ЗАПУСКА");
@@ -166,22 +166,23 @@ public class    Main {
         System.out.println("═".repeat(70));
         System.out.println("\nВыберите User Story для запуска:");
         System.out.println();
-        System.out.println("  1. 👤 КЛИЕНТСКИЕ USER STORIES");
+        System.out.println("  1. 👤 USER STORIES КЛИЕНТА");
+        System.out.println("     - Регистрация и аутентификация");
         System.out.println("     - Просмотр ресторанов и меню");
         System.out.println("     - Работа с корзиной и заказами");
-        System.out.println("     - Регистрация и аутентификация");
+        System.out.println("     - Оценка качества обслуживания");
         System.out.println();
-        System.out.println("  2. 🍽️  РЕСТОРАННЫЕ USER STORIES");
+        System.out.println("  2. 🍽️  USER STORIES РЕСТОРАНА");
         System.out.println("     - Управление меню ресторана");
         System.out.println("     - Просмотр заказов и статистики");
         System.out.println("     - Управление профилем ресторана");
         System.out.println();
-        System.out.println("  3. 🚴 КУРЬЕРСКИЕ USER STORIES");
+        System.out.println("  3. 🚴 USER STORIES КУРЬЕРА");
         System.out.println("     - Принятие и доставка заказов");
         System.out.println("     - Просмотр доступных заказов");
         System.out.println("     - Обновление статусов доставки");
         System.out.println();
-        System.out.println("  4. 👨‍💼 АДМИНИСТРАТИВНЫЕ USER STORIES");
+        System.out.println("  4. 👨‍💼 USER STORIES АДМИНИСТРАТОРА");
         System.out.println("     - Управление пользователями");
         System.out.println("     - Мониторинг системы");
         System.out.println("     - Аналитика и отчеты");
