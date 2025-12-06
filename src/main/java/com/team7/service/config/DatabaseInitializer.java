@@ -210,10 +210,10 @@ public class DatabaseInitializer {
         "007_insert_cart_items.sql",
         "008_insert_orders.sql",
         "009_insert_order_items.sql",
-        "010_insert_reviews.sql",
-        "011_insert_order_status_history.sql",
-        "012_insert_admin_users.sql",
-        "013_insert_courier_users.sql",
+        "011_insert_reviews.sql",
+        "012_insert_order_status_history.sql",
+        "013_insert_admin_users.sql",
+        "010_insert_courier_users.sql",
         "014_insert_courier_assigned_orders.sql"
     };
 
