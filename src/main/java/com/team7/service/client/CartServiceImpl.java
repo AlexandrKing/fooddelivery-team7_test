@@ -17,9 +17,9 @@ public class CartServiceImpl implements CartService {
     @Override
     public Cart getCart(Long userId) {
         String cartSql = "SELECT * FROM carts WHERE user_id = ?";
-        String itemsSql = "SELECT ci.*, m.name, m.price FROM cart_items ci " +
-            "JOIN menu m ON ci.menu_item_id = m.id " +
-            "WHERE ci.cart_id = ?";
+        String itemsSql = "SELECT ci.*, d.name FROM cart_items ci " +
+                "JOIN dishes d ON ci.dish_id = d.id " +
+                "WHERE ci.cart_id = ?";
 
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement cartStmt = conn.prepareStatement(cartSql)) {
@@ -53,7 +53,7 @@ public class CartServiceImpl implements CartService {
     }
 
     @Override
-    public Cart addItem(Long userId, Long restaurantId, Long menuItemId, Integer quantity) {
+    public Cart addItem(Long userId, Long restaurantId, Long dishId, Integer quantity) {
         Connection conn = null;
         try {
             conn = DatabaseConfig.getConnection();
@@ -64,17 +64,18 @@ public class CartServiceImpl implements CartService {
                 cart = createNewCartInDb(userId, restaurantId, conn);
             }
 
-            String checkSql = "SELECT * FROM cart_items WHERE cart_id = ? AND menu_item_id = ?";
+            String checkSql = "SELECT * FROM cart_items WHERE cart_id = ? AND dish_id = ?";
             try (PreparedStatement checkStmt = conn.prepareStatement(checkSql)) {
                 checkStmt.setLong(1, cart.getId());
-                checkStmt.setLong(2, menuItemId);
+                checkStmt.setLong(2, dishId);
                 ResultSet rs = checkStmt.executeQuery();
 
                 if (rs.next()) {
                     updateItemQuantityInDb(cart.getId(), rs.getLong("id"),
-                        rs.getInt("quantity") + quantity, conn);
+                            rs.getInt("quantity") + quantity, conn);
                 } else {
-                    addNewItemToCart(cart.getId(), menuItemId, quantity, conn);
+                    double currentPrice = getCurrentDishPrice(dishId, conn);
+                    addNewItemToCart(cart.getId(), dishId, quantity, currentPrice, conn);
                 }
             }
 
@@ -217,7 +218,11 @@ public class CartServiceImpl implements CartService {
         try (PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             pstmt.setLong(1, userId);
             pstmt.setLong(2, restaurantId);
-            pstmt.executeUpdate();
+            int affectedRows = pstmt.executeUpdate();
+
+            if (affectedRows == 0) {
+                throw new SQLException("Создание корзины не удалось, ни одна строка не добавлена.");
+            }
 
             try (ResultSet rs = pstmt.getGeneratedKeys()) {
                 if (rs.next()) {
@@ -228,18 +233,33 @@ public class CartServiceImpl implements CartService {
                     cart.setItems(new ArrayList<>());
                     cart.setTotalAmount(0.0);
                     return cart;
+                } else {
+                    throw new SQLException("Создание корзины не удалось, не получен ID.");
                 }
             }
         }
-        throw new SQLException("Не удалось создать корзину");
     }
 
-    private void addNewItemToCart(Long cartId, Long menuItemId, Integer quantity, Connection conn) throws SQLException {
-        String sql = "INSERT INTO cart_items (cart_id, menu_item_id, quantity) VALUES (?, ?, ?)";
+    private double getCurrentDishPrice(Long dishId, Connection conn) throws SQLException {
+        String sql = "SELECT price FROM dishes WHERE id = ?";
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setLong(1, dishId);
+            ResultSet rs = pstmt.executeQuery();
+            if (rs.next()) {
+                return rs.getDouble("price");
+            } else {
+                throw new SQLException("Блюдо не найдено: id=" + dishId);
+            }
+        }
+    }
+
+    private void addNewItemToCart(Long cartId, Long dishId, Integer quantity, double price, Connection conn) throws SQLException {
+        String sql = "INSERT INTO cart_items (cart_id, dish_id, quantity, price_at_time) VALUES (?, ?, ?, ?)";
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setLong(1, cartId);
-            pstmt.setLong(2, menuItemId);
+            pstmt.setLong(2, dishId);
             pstmt.setInt(3, quantity);
+            pstmt.setDouble(4, price);
             pstmt.executeUpdate();
         }
     }
@@ -259,11 +279,10 @@ public class CartServiceImpl implements CartService {
 
     private void updateCartTotalAmount(Long cartId, Connection conn) throws SQLException {
         String sql = "UPDATE carts SET total_amount = (" +
-            "SELECT COALESCE(SUM(ci.quantity * m.price), 0) " +
-            "FROM cart_items ci " +
-            "JOIN menu m ON ci.menu_item_id = m.id " +
-            "WHERE ci.cart_id = ?" +
-            ") WHERE id = ?";
+                "SELECT COALESCE(SUM(ci.quantity * ci.price_at_time), 0) " +
+                "FROM cart_items ci " +
+                "WHERE ci.cart_id = ?" +
+                ") WHERE id = ?";
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setLong(1, cartId);
             pstmt.setLong(2, cartId);
@@ -283,10 +302,10 @@ public class CartServiceImpl implements CartService {
     private CartItem createCartItemFromResultSet(ResultSet rs) throws SQLException {
         CartItem item = new CartItem();
         item.setId(rs.getLong("id"));
-        item.setMenuItemId(rs.getLong("menu_item_id"));
+        item.setMenuItemId(rs.getLong("dish_id"));
         item.setQuantity(rs.getInt("quantity"));
         item.setName(rs.getString("name"));
-        item.setPrice(rs.getDouble("price"));
+        item.setPrice(rs.getDouble("price_at_time"));
         return item;
     }
 }

@@ -31,20 +31,20 @@ public class OrderServiceImpl implements OrderService {
             conn = DatabaseConfig.getConnection();
             conn.setAutoCommit(false);
 
-            // Создаем заказ
+            // ИСПРАВЛЕНИЕ: убрать ::delivery_type, ::payment_method, ::order_status
             String orderSql = "INSERT INTO orders (user_id, restaurant_id, delivery_address, " +
-                "delivery_type, delivery_time, payment_method, status, total_amount) " +
-                "VALUES (?, ?, ?, ?::delivery_type, ?, ?::payment_method, ?::order_status, ?) " +
-                "RETURNING id, created_at";
+                    "delivery_type, delivery_time, payment_method, status, total_amount) " +
+                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?) " + // ← просто ?, без кастов
+                    "RETURNING id, created_at";
 
             try (PreparedStatement orderStmt = conn.prepareStatement(orderSql)) {
                 orderStmt.setLong(1, userId);
                 orderStmt.setLong(2, restaurantId);
                 orderStmt.setString(3, deliveryAddress);
-                orderStmt.setString(4, deliveryType.toString());
+                orderStmt.setString(4, deliveryType.toString()); // Просто строка
                 orderStmt.setTimestamp(5, Timestamp.valueOf(deliveryTime));
-                orderStmt.setString(6, paymentMethod.toString());
-                orderStmt.setString(7, OrderStatus.PENDING.toString());
+                orderStmt.setString(6, paymentMethod.toString()); // Просто строка
+                orderStmt.setString(7, OrderStatus.PENDING.toString()); // Просто строка
                 orderStmt.setDouble(8, cart.getTotalAmount());
 
                 ResultSet rs = orderStmt.executeQuery();
@@ -55,14 +55,14 @@ public class OrderServiceImpl implements OrderService {
                 Long orderId = rs.getLong("id");
                 LocalDateTime createdAt = rs.getTimestamp("created_at").toLocalDateTime();
 
-                // Добавляем товары в заказ
-                String itemSql = "INSERT INTO order_items (order_id, menu_item_id, name, price, quantity) " +
-                    "VALUES (?, ?, ?, ?, ?)";
+                // ИСПРАВЛЕНИЕ: использовать dish_id вместо menu_item_id
+                String itemSql = "INSERT INTO order_items (order_id, dish_id, name, price, quantity) " +
+                        "VALUES (?, ?, ?, ?, ?)";
 
                 try (PreparedStatement itemStmt = conn.prepareStatement(itemSql)) {
                     for (CartItem cartItem : cart.getItems()) {
                         itemStmt.setLong(1, orderId);
-                        itemStmt.setLong(2, cartItem.getMenuItemId());
+                        itemStmt.setLong(2, cartItem.getMenuItemId()); // dish_id
                         itemStmt.setString(3, cartItem.getName());
                         itemStmt.setDouble(4, cartItem.getPrice());
                         itemStmt.setInt(5, cartItem.getQuantity());
@@ -71,8 +71,8 @@ public class OrderServiceImpl implements OrderService {
                     itemStmt.executeBatch();
                 }
 
-                // Добавляем запись в историю статусов
-                String historySql = "INSERT INTO order_status_history (order_id, status) VALUES (?, ?::order_status)";
+                // ИСПРАВЛЕНИЕ: убрать ::order_status
+                String historySql = "INSERT INTO order_status_history (order_id, status) VALUES (?, ?)";
                 try (PreparedStatement historyStmt = conn.prepareStatement(historySql)) {
                     historyStmt.setLong(1, orderId);
                     historyStmt.setString(2, OrderStatus.PENDING.toString());
@@ -180,7 +180,7 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public Order cancelOrder(Long orderId) {
-        String sql = "UPDATE orders SET status = ?::order_status WHERE id = ? AND status = ?::order_status";
+        String sql = "UPDATE orders SET status = ? WHERE id = ? AND status = ?";
 
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -235,7 +235,7 @@ public class OrderServiceImpl implements OrderService {
             while (rs.next()) {
                 OrderItem item = new OrderItem();
                 item.setId(rs.getLong("id"));
-                item.setMenuItemId(rs.getLong("menu_item_id"));
+                item.setMenuItemId(rs.getLong("dish_id"));
                 item.setName(rs.getString("name"));
                 item.setPrice(rs.getDouble("price"));
                 item.setQuantity(rs.getInt("quantity"));

@@ -306,16 +306,17 @@ public class ClientUserStories {
 
             try {
                 Cart cart = cartService.addItem(currentUser.getId(), currentRestaurant.getId(), selectedItem.getId(), quantity);
-                if (cart != null) {
-                    System.out.println("        ДОБАВЛЕНО В КОРЗИНУ!");
-                    System.out.println("✅".repeat(40));
-                    System.out.println("🍽️  Блюдо: " + selectedItem.getName());
-                    System.out.println("💰 Цена за шт: " + selectedItem.getPrice() + " руб");
-                    System.out.println("📦 Количество: " + quantity);
-                    System.out.println("💰 Итого: " + (selectedItem.getPrice() * quantity) + " руб");
-                    System.out.println("🛒 Товаров в корзине: " + cart.getItems().size());
-                    System.out.println("💰 Общая сумма корзины: " + cart.getTotalAmount() + " руб");
-                }
+
+                System.out.println("\n" + "=".repeat(50));
+                System.out.println("        ДОБАВЛЕНО В КОРЗИНУ!");
+                System.out.println("=".repeat(50));
+                System.out.println("🍽️  Блюдо: " + selectedItem.getName());
+                System.out.println("💰 Цена за шт: " + selectedItem.getPrice() + " руб");
+                System.out.println("📦 Количество: " + quantity);
+                System.out.println("💰 Итого: " + (selectedItem.getPrice() * quantity) + " руб");
+                System.out.println("🛒 Товаров в корзине: " + cart.getItems().size());
+                System.out.println("💰 Общая сумма корзины: " + cart.getTotalAmount() + " руб");
+
             } catch (Exception e) {
                 System.out.println("❌ Ошибка при добавлении в корзину: " + e.getMessage());
             }
@@ -472,10 +473,19 @@ public class ClientUserStories {
 
             // Показываем сводку заказа
             System.out.println("📋 Сводка заказа:");
-            System.out.println("📍 Ресторан: " + currentRestaurant.getName());
+
+            // ВАЖНОЕ ИСПРАВЛЕНИЕ: Проверяем currentRestaurant
+            if (currentRestaurant != null) {
+                System.out.println("📍 Ресторан: " + currentRestaurant.getName());
+            } else {
+                // Если currentRestaurant null, получаем restaurantId из корзины
+                System.out.println("📍 Ресторан ID: " + cart.getRestaurantId());
+            }
+
             System.out.println("📦 Товары:");
             for (CartItem item : cart.getItems()) {
-                System.out.println("   • " + item.getName() + " x" + item.getQuantity() + " = " + (item.getPrice() * item.getQuantity()) + " руб");
+                System.out.println("   • " + item.getName() + " x" + item.getQuantity() +
+                        " = " + (item.getPrice() * item.getQuantity()) + " руб");
             }
             System.out.println("💰 Общая сумма: " + cart.getTotalAmount() + " руб");
 
@@ -500,16 +510,26 @@ public class ClientUserStories {
 
             PaymentMethod paymentMethod = (paymentChoice == 1) ? PaymentMethod.CARD : PaymentMethod.CASH;
 
+            // ВАЖНОЕ ИСПРАВЛЕНИЕ: Используем restaurantId из корзины
+            Long restaurantId = (currentRestaurant != null) ? currentRestaurant.getId() : cart.getRestaurantId();
+
+            if (restaurantId == null) {
+                System.out.println("❌ Не удалось определить ресторан для заказа");
+                return;
+            }
+
             Order order = orderService.createOrder(
                     currentUser.getId(),
-                    cart.getRestaurantId(),
+                    restaurantId,  // Используем restaurantId из корзины или currentRestaurant
                     address,
                     deliveryType,
                     LocalDateTime.now().plusHours(1),
                     paymentMethod
             );
 
+            System.out.println("\n" + "=".repeat(50));
             System.out.println("        🎉 ЗАКАЗ СОЗДАН УСПЕШНО!        ");
+            System.out.println("=".repeat(50));
             System.out.println("📦 Номер заказа: " + order.getId());
             System.out.println("📊 Статус: " + order.getStatus());
             System.out.println("💰 Сумма: " + order.getTotalAmount() + " руб");
@@ -521,8 +541,12 @@ public class ClientUserStories {
             cartService.clearCart(currentUser.getId());
             System.out.println("🛒 Корзина очищена");
 
+            // Сбрасываем текущий ресторан
+            currentRestaurant = null;
+
         } catch (Exception e) {
             System.out.println("❌ Ошибка создания заказа: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 
