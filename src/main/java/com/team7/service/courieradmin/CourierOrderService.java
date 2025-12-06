@@ -96,7 +96,7 @@ public class CourierOrderService {
     }
 
     public boolean markOrderAsDelivered(Long orderId, String deliveryNotes) {
-        String sql = "UPDATE courier_assigned_orders SET status = 'delivered', delivered_at = CURRENT_TIMESTAMP, delivery_notes = ? WHERE order_id = ?";
+        String sql = "UPDATE courier_assigned_orders SET status = 'delivered', actual_delivery_time = CURRENT_TIMESTAMP, delivery_notes = ? WHERE order_id = ?";
 
         try (Connection conn = DatabaseConfig.getConnection()) {
             conn.setAutoCommit(false);
@@ -115,7 +115,7 @@ public class CourierOrderService {
                 }
 
                 // 2. Обновляем статус заказа в orders
-                String updateOrderSql = "UPDATE orders SET status = 'DELIVERED', delivered_at = CURRENT_TIMESTAMP WHERE id = ?";
+                String updateOrderSql = "UPDATE orders SET status = 'DELIVERED', actual_delivery_time = CURRENT_TIMESTAMP WHERE id = ?";
                 try (PreparedStatement updateStmt = conn.prepareStatement(updateOrderSql)) {
                     updateStmt.setLong(1, orderId);
                     updateStmt.executeUpdate();
@@ -232,7 +232,7 @@ public class CourierOrderService {
                     order.setPickedUpAt(pickedUpAt.toLocalDateTime());
                 }
 
-                Timestamp deliveredAt = rs.getTimestamp("delivered_at");
+                Timestamp deliveredAt = rs.getTimestamp("delivery_time");
                 if (deliveredAt != null) {
                     order.setDeliveredAt(deliveredAt.toLocalDateTime());
                 }

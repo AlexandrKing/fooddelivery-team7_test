@@ -40,8 +40,7 @@ public class CourierUserStories {
                 System.out.println("6. ✅ Отметить заказ как доставленный");
                 System.out.println("7. 📋 Мои заказы");
                 System.out.println("8. 💰 Пополнить баланс");
-                System.out.println("9. 🔐 Сменить пароль");
-                System.out.println("10. 🚪 Выйти из системы");
+                System.out.println("9. 🚪 Выйти из системы");
                 System.out.println("0. ❌ Выйти из программы");
             } else {
                 System.out.println("1. 🔑 Войти в систему");
@@ -97,9 +96,6 @@ public class CourierUserStories {
                 addMoney();
                 break;
             case 9:
-                changePassword();
-                break;
-            case 10:
                 logout();
                 return true;
             case 0:
@@ -249,7 +245,8 @@ public class CourierUserStories {
             for (OrderService.Order order : orders) {
                 System.out.println("   - #" + order.getId() +
                         ", сумма: " + order.getTotalAmount() +
-                        ", ресторан: " + order.getRestaurantName());
+                        ", ресторан: " + order.getRestaurantName() +
+                        ", статус: " + order.getStatus());
             }
         }
 
@@ -712,6 +709,9 @@ public class CourierUserStories {
                     System.out.println("   🚴 Статус доставки: " + translateOrderStatus(assignmentStatus));
                 }
 
+                if (order.getDeliveredAt() != null) {
+                    System.out.println("   ✅ Дата доставки: " + order.getDeliveredAt());
+                }
 
                 System.out.println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
             }
@@ -753,35 +753,6 @@ public class CourierUserStories {
         }
     }
 
-    private static void changePassword() {
-        System.out.println("\n" + "=".repeat(40));
-        System.out.println("        🔐 СМЕНА ПАРОЛЯ        ");
-        System.out.println("=".repeat(40));
-
-        System.out.print("Текущий пароль: ");
-        String currentPassword = scanner.nextLine();
-
-        System.out.print("Новый пароль (мин. 6 символов): ");
-        String newPassword = scanner.nextLine();
-
-        System.out.print("Подтверждение нового пароля: ");
-        String confirmPassword = scanner.nextLine();
-
-        if (!newPassword.equals(confirmPassword)) {
-            System.out.println("❌ Пароли не совпадают!");
-            return;
-        }
-
-        if (newPassword.length() < 6) {
-            System.out.println("❌ Пароль должен быть не менее 6 символов!");
-            return;
-        }
-
-        System.out.println("⚠️  Для смены пароля обратитесь к администратору");
-        System.out.println("   Или используйте SQL запрос:");
-        System.out.println("   UPDATE courier_users SET password_hash = [новый_хэш] WHERE id = " + currentCourier.getId() + ";");
-    }
-
     private static void logout() {
         // Меняем статус на offline при выходе
         if (currentCourier != null) {
@@ -821,10 +792,10 @@ public class CourierUserStories {
             case "ACCEPTED": return "✅ Принят";
             case "COOKING": return "👨‍🍳 Готовится";
             case "DELIVERING": return "🚚 Доставляется";
+            case "DELIVERED": return "✅ Доставлен";
             case "CANCELLED": return "❌ Отменен";
             case "ASSIGNED": return "🚴 Назначен";
             case "PICKED_UP": return "📦 Забран";
-            case "DELIVERED": return "✅ Доставлен";
             case "IN_PROGRESS": return "🚗 В пути";
             default: return status;
         }

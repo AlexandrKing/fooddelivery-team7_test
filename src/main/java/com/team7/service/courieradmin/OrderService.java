@@ -6,6 +6,8 @@ import java.sql.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import com.team7.model.courier.AssignedOrder;
+
 
 public class OrderService {
 
@@ -20,34 +22,40 @@ public class OrderService {
         private String paymentMethod;
         private LocalDateTime createdAt;
         private LocalDateTime preferredDeliveryTime;
+        private LocalDateTime deliveredAt;  // Добавляем это поле
         private String clientName;
         private String restaurantName;
 
         public Order() {}
 
+        // Геттеры
         public Long getId() { return id; }
-        public void setId(Long id) { this.id = id; }
         public Long getUserId() { return userId; }
-        public void setUserId(Long userId) { this.userId = userId; }
         public Long getRestaurantId() { return restaurantId; }
-        public void setRestaurantId(Long restaurantId) { this.restaurantId = restaurantId; }
         public String getStatus() { return status; }
-        public void setStatus(String status) { this.status = status; }
         public BigDecimal getTotalAmount() { return totalAmount; }
-        public void setTotalAmount(BigDecimal totalAmount) { this.totalAmount = totalAmount; }
         public String getDeliveryAddress() { return deliveryAddress; }
-        public void setDeliveryAddress(String deliveryAddress) { this.deliveryAddress = deliveryAddress; }
         public String getDeliveryType() { return deliveryType; }
-        public void setDeliveryType(String deliveryType) { this.deliveryType = deliveryType; }
         public String getPaymentMethod() { return paymentMethod; }
-        public void setPaymentMethod(String paymentMethod) { this.paymentMethod = paymentMethod; }
         public LocalDateTime getCreatedAt() { return createdAt; }
-        public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
         public LocalDateTime getPreferredDeliveryTime() { return preferredDeliveryTime; }
-        public void setPreferredDeliveryTime(LocalDateTime preferredDeliveryTime) { this.preferredDeliveryTime = preferredDeliveryTime; }
+        public LocalDateTime getDeliveredAt() { return deliveredAt; }  // Добавляем геттер
         public String getClientName() { return clientName; }
-        public void setClientName(String clientName) { this.clientName = clientName; }
         public String getRestaurantName() { return restaurantName; }
+
+        // Сеттеры
+        public void setId(Long id) { this.id = id; }
+        public void setUserId(Long userId) { this.userId = userId; }
+        public void setRestaurantId(Long restaurantId) { this.restaurantId = restaurantId; }
+        public void setStatus(String status) { this.status = status; }
+        public void setTotalAmount(BigDecimal totalAmount) { this.totalAmount = totalAmount; }
+        public void setDeliveryAddress(String deliveryAddress) { this.deliveryAddress = deliveryAddress; }
+        public void setDeliveryType(String deliveryType) { this.deliveryType = deliveryType; }
+        public void setPaymentMethod(String paymentMethod) { this.paymentMethod = paymentMethod; }
+        public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+        public void setPreferredDeliveryTime(LocalDateTime preferredDeliveryTime) { this.preferredDeliveryTime = preferredDeliveryTime; }
+        public void setDeliveredAt(LocalDateTime deliveredAt) { this.deliveredAt = deliveredAt; }  // Добавляем сеттер
+        public void setClientName(String clientName) { this.clientName = clientName; }
         public void setRestaurantName(String restaurantName) { this.restaurantName = restaurantName; }
     }
 
@@ -254,25 +262,57 @@ public class OrderService {
 
     private Order mapResultSetToOrder(ResultSet rs) throws SQLException {
         Order order = new Order();
-        order.setId(rs.getLong("id"));
-        order.setUserId(rs.getLong("user_id"));
-        order.setRestaurantId(rs.getLong("restaurant_id"));
-        order.setStatus(rs.getString("status"));
-        order.setTotalAmount(rs.getBigDecimal("total_amount"));
-        order.setDeliveryAddress(rs.getString("delivery_address"));
-        order.setDeliveryType(rs.getString("delivery_type"));
-        order.setPaymentMethod(rs.getString("payment_method"));
-        order.setCreatedAt(rs.getTimestamp("created_at").toLocalDateTime());
 
-        Timestamp preferredTime = rs.getTimestamp("preferred_delivery_time");
-        if (preferredTime != null) {
-            order.setPreferredDeliveryTime(preferredTime.toLocalDateTime());
+        try {
+            order.setId(rs.getLong("id"));
+            order.setUserId(rs.getLong("user_id"));
+            order.setRestaurantId(rs.getLong("restaurant_id"));
+            order.setStatus(rs.getString("status"));
+            order.setTotalAmount(rs.getBigDecimal("total_amount"));
+            order.setDeliveryAddress(rs.getString("delivery_address"));
+            order.setDeliveryType(rs.getString("delivery_type"));
+            order.setPaymentMethod(rs.getString("payment_method"));
+
+            Timestamp createdAt = rs.getTimestamp("created_at");
+            if (createdAt != null) {
+                order.setCreatedAt(createdAt.toLocalDateTime());
+            }
+
+            // Безопасное получение optional колонок
+            try {
+                Timestamp preferredTime = rs.getTimestamp("preferred_delivery_time");
+                if (preferredTime != null) {
+                    order.setPreferredDeliveryTime(preferredTime.toLocalDateTime());
+                }
+            } catch (SQLException e) {
+                // Колонка может отсутствовать - пропускаем
+            }
+
+            try {
+                Timestamp deliveredAt = rs.getTimestamp("delivery_time");
+                if (deliveredAt != null) {
+                    order.setDeliveredAt(deliveredAt.toLocalDateTime());
+                }
+            } catch (SQLException e) {
+                // Колонка может отсутствовать - пропускаем
+            }
+
+            try {
+                Timestamp updatedAt = rs.getTimestamp("updated_at");
+                // Не сохраняем, но обрабатываем чтобы не было исключения
+            } catch (SQLException e) {
+                // Колонка может отсутствовать - пропускаем
+            }
+
+            order.setClientName(rs.getString("client_name"));
+            order.setRestaurantName(rs.getString("restaurant_name"));
+
+        } catch (SQLException e) {
+            System.err.println("Ошибка при маппинге ResultSet в Order: " + e.getMessage());
+            e.printStackTrace();
+            // Возвращаем частично заполненный объект или null
         }
 
-
-
-        order.setClientName(rs.getString("client_name"));
-        order.setRestaurantName(rs.getString("restaurant_name"));
         return order;
     }
 
