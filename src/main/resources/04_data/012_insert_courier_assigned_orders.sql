@@ -1,5 +1,5 @@
 INSERT INTO courier_assigned_orders (id, courier_id, order_id, assigned_at, picked_up_at, delivered_at, status,
-                                     estimated_delivery_time, actual_delivery_time, travel_distance_km, delivery_notes) VALUES
+                                     estimated_delivery_time, delivery_time, travel_distance_km, delivery_notes) VALUES
 (1, 1, 1, '2024-01-19 14:30:00', '2024-01-19 14:35:00', '2024-01-19 15:00:00', 'delivered',
  '2024-01-19 15:00:00', '2024-01-19 15:00:00', 3.5, 'Доставлено вовремя, клиент доволен'),
 (3, 2, 2, '2024-01-19 14:45:00', '2024-01-19 14:50:00', NULL, 'in_progress',
