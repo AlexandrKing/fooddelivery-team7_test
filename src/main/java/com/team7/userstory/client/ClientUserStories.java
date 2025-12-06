@@ -10,19 +10,15 @@ import java.util.Scanner;
 
 public class ClientUserStories {
     private static User currentUser = null;
+    private static Restaurant currentRestaurant = null;
 
     public static void main(String[] args) {
         // Создаем сервисы без DatabaseConfig
         AuthService authService = new AuthServiceImpl();
         RestaurantService restaurantService = new RestaurantServiceImpl();
-        MenuService menuService = new MenuServiceImpl(); // ✅ Исправлено: MenuServicelmpl -> MenuServiceImpl
+        MenuService menuService = new MenuServiceImpl();
         CartService cartService = new CartServiceImpl();
-        OrderService orderService = new OrderServiceImpl(cartService); // Только cartService
-
-        // Если нужны дополнительные сервисы, раскомментируйте:
-        // HistoryService historyService = new HistoryServiceImpl(orderService);
-        // OrderTrackingService orderTrackingService = new OrderTrackingServiceImpl(orderService);
-        // ReviewService reviewService = new ReviewServiceImpl();
+        OrderService orderService = new OrderServiceImpl(cartService);
 
         Scanner scanner = new Scanner(System.in);
         boolean running = true;
@@ -33,12 +29,16 @@ public class ClientUserStories {
             if (currentUser != null) {
                 System.out.println("👋 Добро пожаловать, " + currentUser.getName() + "!");
                 System.out.println("1. 📍 Поиск ресторанов");
-                System.out.println("2. 📋 Просмотр меню");
+                System.out.println("2. 📋 Просмотр меню текущего ресторана");
                 System.out.println("3. 🛒 Корзина");
                 System.out.println("4. 📦 Мои заказы");
                 System.out.println("5. 👤 Профиль");
                 System.out.println("6. 🚪 Выйти из системы");
                 System.out.println("7. ❌ Выйти из программы");
+
+                if (currentRestaurant != null) {
+                    System.out.println("📍 Текущий ресторан: " + currentRestaurant.getName());
+                }
             } else {
                 System.out.println("1. 📝 Регистрация");
                 System.out.println("2. 🔑 Вход в систему");
@@ -71,10 +71,14 @@ public class ClientUserStories {
                                        Scanner scanner) {
         switch (choice) {
             case 1:
-                searchRestaurants(restaurantService, scanner);
+                searchRestaurants(restaurantService, menuService, cartService, scanner);
                 break;
             case 2:
-                viewMenu(menuService, cartService, scanner);
+                if (currentRestaurant != null) {
+                    viewRestaurantMenu(menuService, cartService, scanner);
+                } else {
+                    System.out.println("⚠️  Сначала выберите ресторан через пункт 'Поиск ресторанов'");
+                }
                 break;
             case 3:
                 manageCart(cartService, orderService, scanner);
@@ -166,7 +170,10 @@ public class ClientUserStories {
         }
     }
 
-    private static void searchRestaurants(RestaurantService restaurantService, Scanner scanner) {
+    private static void searchRestaurants(RestaurantService restaurantService,
+                                          MenuService menuService,
+                                          CartService cartService,
+                                          Scanner scanner) {
         System.out.println("\n=== 📍 ПОИСК РЕСТОРАНОВ ===");
 
         try {
@@ -181,9 +188,10 @@ public class ClientUserStories {
             for (int i = 0; i < restaurants.size(); i++) {
                 Restaurant r = restaurants.get(i);
                 System.out.println((i + 1) + ". " + r.getName() +
-                    " ⭐ " + r.getRating() +
-                    " 🚚 " + r.getDeliveryTime() + " мин" +
-                    " 💰 Мин. заказ: " + r.getMinOrderAmount() + " руб");
+                        " ⭐ " + r.getRating() +
+                        " 🚚 " + r.getDeliveryTime() + " мин" +
+                        " 💰 Мин. заказ: " + r.getMinOrderAmount() + " руб" +
+                        " | Кухня: " + r.getCuisineType());
             }
 
             System.out.print("\nВыберите ресторан для просмотра меню (0 - назад): ");
@@ -192,7 +200,11 @@ public class ClientUserStories {
 
             if (choice > 0 && choice <= restaurants.size()) {
                 Restaurant selectedRestaurant = restaurants.get(choice - 1);
-                System.out.println("✅ Выбран ресторан: " + selectedRestaurant.getName());
+                currentRestaurant = selectedRestaurant;
+                System.out.println("\n        ВЫБРАН РЕСТОРАН: " + selectedRestaurant.getName().toUpperCase());
+
+                // Сразу показываем меню выбранного ресторана
+                viewRestaurantMenu(menuService, cartService, scanner);
             }
 
         } catch (Exception e) {
@@ -200,51 +212,115 @@ public class ClientUserStories {
         }
     }
 
-    private static void viewMenu(MenuService menuService, CartService cartService, Scanner scanner) {
-        System.out.println("\n=== 📋 ПРОСМОТР МЕНЮ ===");
+    private static void viewRestaurantMenu(MenuService menuService, CartService cartService, Scanner scanner) {
+        if (currentRestaurant == null) {
+            System.out.println("⚠️  Ресторан не выбран!");
+            return;
+        }
 
-        System.out.print("Введите ID ресторана: ");
-        Long restaurantId = scanner.nextLong();
-        scanner.nextLine();
+        System.out.println("\n=== 📋 МЕНЮ РЕСТОРАНА: " + currentRestaurant.getName() + " ===");
+        System.out.println("⭐ Рейтинг: " + currentRestaurant.getRating());
+        System.out.println("🚚 Время доставки: " + currentRestaurant.getDeliveryTime() + " мин");
+        System.out.println("💰 Минимальный заказ: " + currentRestaurant.getMinOrderAmount() + " руб");
+        System.out.println("📍 Адрес: " + currentRestaurant.getAddress());
+        System.out.println("-".repeat(50));
 
         try {
-            List<Menu> menu = menuService.getMenu(restaurantId);
+            List<Menu> menu = menuService.getMenu(currentRestaurant.getId());
 
             if (menu.isEmpty()) {
                 System.out.println("😔 Меню пустое");
                 return;
             }
 
-            System.out.println("🍽️  Меню ресторана:");
+            System.out.println("🍽️  Блюда:");
             for (int i = 0; i < menu.size(); i++) {
                 Menu item = menu.get(i);
                 System.out.println((i + 1) + ". " + item.getName() +
-                    " - 💰 " + item.getPrice() + " руб" +
-                    " | " + item.getDescription());
+                        " - 💰 " + item.getPrice() + " руб");
+                if (item.getDescription() != null && !item.getDescription().isEmpty()) {
+                    System.out.println("   📝 " + item.getDescription());
+                }
+                if (item.getCalories() != null) {
+                    System.out.println("   🔥 " + item.getCalories() + " ккал");
+                }
+                if (item.getCookingTime() != null) {
+                    System.out.println("   ⏱️  Готовится: " + item.getCookingTime() + " мин");
+                }
+                System.out.println();
             }
 
-            System.out.print("\nДобавить в корзину (номер блюда, 0 - назад): ");
-            int choice = scanner.nextInt();
-            scanner.nextLine();
+            boolean inMenu = true;
+            while (inMenu) {
+                System.out.println("\n=== УПРАВЛЕНИЕ МЕНЮ ===");
+                System.out.println("1. ➕ Добавить блюдо в корзину");
+                System.out.println("2. 🛒 Перейти в корзину");
+                System.out.println("3. 🔙 Вернуться к списку ресторанов");
+                System.out.println("4. 🏠 Вернуться в главное меню");
 
-            if (choice > 0 && choice <= menu.size()) {
-                Menu selectedItem = menu.get(choice - 1);
-                System.out.print("Количество: ");
-                int quantity = scanner.nextInt();
+                System.out.print("Выберите действие: ");
+                int menuChoice = scanner.nextInt();
                 scanner.nextLine();
 
-                try {
-                    Cart cart = cartService.addItem(currentUser.getId(), restaurantId, selectedItem.getId(), quantity);
-                    if (cart != null) {
-                        System.out.println("✅ Добавлено в корзину: " + selectedItem.getName());
-                    }
-                } catch (Exception e) {
-                    System.out.println("❌ Ошибка при добавлении в корзину: " + e.getMessage());
+                switch (menuChoice) {
+                    case 1:
+                        addToCartFromMenu(menu, cartService, scanner);
+                        break;
+                    case 2:
+                        inMenu = false;
+                        // Корзину обработаем в главном меню
+                        break;
+                    case 3:
+                        currentRestaurant = null;
+                        inMenu = false;
+                        break;
+                    case 4:
+                        currentRestaurant = null;
+                        inMenu = false;
+                        return;
+                    default:
+                        System.out.println("❌ Неверный выбор!");
                 }
             }
 
         } catch (Exception e) {
             System.out.println("❌ Ошибка: " + e.getMessage());
+        }
+    }
+
+    private static void addToCartFromMenu(List<Menu> menu, CartService cartService, Scanner scanner) {
+        System.out.print("Введите номер блюда: ");
+        int choice = scanner.nextInt();
+        scanner.nextLine();
+
+        if (choice > 0 && choice <= menu.size()) {
+            Menu selectedItem = menu.get(choice - 1);
+            System.out.print("Количество: ");
+            int quantity = scanner.nextInt();
+            scanner.nextLine();
+
+            if (quantity <= 0) {
+                System.out.println("❌ Количество должно быть больше 0");
+                return;
+            }
+
+            try {
+                Cart cart = cartService.addItem(currentUser.getId(), currentRestaurant.getId(), selectedItem.getId(), quantity);
+                if (cart != null) {
+                    System.out.println("        ДОБАВЛЕНО В КОРЗИНУ!");
+                    System.out.println("✅".repeat(40));
+                    System.out.println("🍽️  Блюдо: " + selectedItem.getName());
+                    System.out.println("💰 Цена за шт: " + selectedItem.getPrice() + " руб");
+                    System.out.println("📦 Количество: " + quantity);
+                    System.out.println("💰 Итого: " + (selectedItem.getPrice() * quantity) + " руб");
+                    System.out.println("🛒 Товаров в корзине: " + cart.getItems().size());
+                    System.out.println("💰 Общая сумма корзины: " + cart.getTotalAmount() + " руб");
+                }
+            } catch (Exception e) {
+                System.out.println("❌ Ошибка при добавлении в корзину: " + e.getMessage());
+            }
+        } else {
+            System.out.println("❌ Неверный номер блюда!");
         }
     }
 
@@ -256,72 +332,126 @@ public class ClientUserStories {
 
             if (cart.getItems().isEmpty()) {
                 System.out.println("🛒 Корзина пуста");
+
+                if (currentRestaurant != null) {
+                    System.out.print("\nХотите вернуться к меню ресторана '" + currentRestaurant.getName() + "'? (да/нет): ");
+                    String answer = scanner.nextLine().trim().toLowerCase();
+                    if (answer.equals("да") || answer.equals("д") || answer.equals("yes") || answer.equals("y")) {
+                        // Ничего не делаем - вернемся в главное меню, а затем можно выбрать пункт 2
+                    }
+                }
                 return;
             }
 
-            System.out.println("📦 Товары в корзине:");
+            // Показываем информацию о ресторане
+            if (currentRestaurant != null) {
+                System.out.println("📍 Ресторан: " + currentRestaurant.getName());
+            }
+
+            System.out.println("\n📦 Товары в корзине:");
             for (int i = 0; i < cart.getItems().size(); i++) {
                 CartItem item = cart.getItems().get(i);
                 System.out.println((i + 1) + ". " + item.getName() +
-                    " | 💰 " + item.getPrice() + " руб" +
-                    " | Количество: " + item.getQuantity());
+                        " | 💰 " + item.getPrice() + " руб" +
+                        " | Количество: " + item.getQuantity() +
+                        " | Сумма: " + (item.getPrice() * item.getQuantity()) + " руб");
             }
             System.out.println("💰 Общая сумма: " + cart.getTotalAmount() + " руб");
 
-            System.out.println("\n1. ✏️  Изменить количество");
-            System.out.println("2. ❌ Удалить товар");
-            System.out.println("3. 🗑️  Очистить корзину");
-            System.out.println("4. 📦 Оформить заказ");
-            System.out.println("0. ↩️  Назад");
+            boolean inCart = true;
+            while (inCart) {
+                System.out.println("\n=== УПРАВЛЕНИЕ КОРЗИНОЙ ===");
+                System.out.println("1. ✏️  Изменить количество");
+                System.out.println("2. ❌ Удалить товар");
+                System.out.println("3. 🗑️  Очистить корзину");
+                System.out.println("4. 📦 Оформить заказ");
+                System.out.println("5. 🔙 Вернуться в меню ресторана");
+                System.out.println("6. 🏠 Вернуться в главное меню");
 
-            System.out.print("Выберите действие: ");
-            int choice = scanner.nextInt();
-            scanner.nextLine();
+                System.out.print("Выберите действие: ");
+                int choice = scanner.nextInt();
+                scanner.nextLine();
 
-            switch (choice) {
-                case 1:
-                    System.out.print("Номер товара: ");
-                    int itemNum = scanner.nextInt();
-                    System.out.print("Новое количество: ");
-                    int newQuantity = scanner.nextInt();
-                    scanner.nextLine();
+                switch (choice) {
+                    case 1:
+                        System.out.print("Номер товара: ");
+                        int itemNum = scanner.nextInt();
+                        System.out.print("Новое количество: ");
+                        int newQuantity = scanner.nextInt();
+                        scanner.nextLine();
 
-                    if (itemNum > 0 && itemNum <= cart.getItems().size()) {
-                        CartItem item = cart.getItems().get(itemNum - 1);
+                        if (itemNum > 0 && itemNum <= cart.getItems().size()) {
+                            CartItem item = cart.getItems().get(itemNum - 1);
+                            try {
+                                cartService.updateItemQuantity(currentUser.getId(), item.getId(), newQuantity);
+                                System.out.println("✅ Количество обновлено");
+                                // Обновляем корзину
+                                cart = cartService.getCart(currentUser.getId());
+                            } catch (Exception e) {
+                                System.out.println("❌ Ошибка: " + e.getMessage());
+                            }
+                        }
+                        break;
+                    case 2:
+                        System.out.print("Номер товара: ");
+                        itemNum = scanner.nextInt();
+                        scanner.nextLine();
+
+                        if (itemNum > 0 && itemNum <= cart.getItems().size()) {
+                            CartItem item = cart.getItems().get(itemNum - 1);
+                            try {
+                                cartService.removeItem(currentUser.getId(), item.getId());
+                                System.out.println("✅ Товар удален");
+                                // Обновляем корзину
+                                cart = cartService.getCart(currentUser.getId());
+                                if (cart.getItems().isEmpty()) {
+                                    System.out.println("🛒 Корзина теперь пуста");
+                                    inCart = false;
+                                }
+                            } catch (Exception e) {
+                                System.out.println("❌ Ошибка: " + e.getMessage());
+                            }
+                        }
+                        break;
+                    case 3:
                         try {
-                            cartService.updateItemQuantity(currentUser.getId(), item.getId(), newQuantity);
-                            System.out.println("✅ Количество обновлено");
+                            cartService.clearCart(currentUser.getId());
+                            System.out.println("✅ Корзина очищена");
+                            inCart = false;
                         } catch (Exception e) {
                             System.out.println("❌ Ошибка: " + e.getMessage());
                         }
-                    }
-                    break;
-                case 2:
-                    System.out.print("Номер товара: ");
-                    itemNum = scanner.nextInt();
-                    scanner.nextLine();
-
-                    if (itemNum > 0 && itemNum <= cart.getItems().size()) {
-                        CartItem item = cart.getItems().get(itemNum - 1);
-                        try {
-                            cartService.removeItem(currentUser.getId(), item.getId());
-                            System.out.println("✅ Товар удален");
-                        } catch (Exception e) {
-                            System.out.println("❌ Ошибка: " + e.getMessage());
+                        break;
+                    case 4:
+                        createOrder(cartService, orderService, scanner);
+                        inCart = false;
+                        break;
+                    case 5:
+                        if (currentRestaurant != null) {
+                            inCart = false;
+                            // Вернемся в главное меню, а затем можно выбрать пункт 2
+                        } else {
+                            System.out.println("⚠️  Ресторан не выбран!");
                         }
+                        break;
+                    case 6:
+                        inCart = false;
+                        break;
+                    default:
+                        System.out.println("❌ Неверный выбор!");
+                }
+
+                // Если корзина не пуста, показываем обновленный список
+                if (inCart && !cart.getItems().isEmpty()) {
+                    System.out.println("\n📦 Товары в корзине:");
+                    for (int i = 0; i < cart.getItems().size(); i++) {
+                        CartItem item = cart.getItems().get(i);
+                        System.out.println((i + 1) + ". " + item.getName() +
+                                " | 💰 " + item.getPrice() + " руб" +
+                                " | Количество: " + item.getQuantity());
                     }
-                    break;
-                case 3:
-                    try {
-                        cartService.clearCart(currentUser.getId());
-                        System.out.println("✅ Корзина очищена");
-                    } catch (Exception e) {
-                        System.out.println("❌ Ошибка: " + e.getMessage());
-                    }
-                    break;
-                case 4:
-                    createOrder(cartService, orderService, scanner);
-                    break;
+                    System.out.println("💰 Общая сумма: " + cart.getTotalAmount() + " руб");
+                }
             }
 
         } catch (Exception e) {
@@ -340,7 +470,16 @@ public class ClientUserStories {
                 return;
             }
 
-            System.out.print("📍 Адрес доставки: ");
+            // Показываем сводку заказа
+            System.out.println("📋 Сводка заказа:");
+            System.out.println("📍 Ресторан: " + currentRestaurant.getName());
+            System.out.println("📦 Товары:");
+            for (CartItem item : cart.getItems()) {
+                System.out.println("   • " + item.getName() + " x" + item.getQuantity() + " = " + (item.getPrice() * item.getQuantity()) + " руб");
+            }
+            System.out.println("💰 Общая сумма: " + cart.getTotalAmount() + " руб");
+
+            System.out.print("\n📍 Адрес доставки: ");
             String address = scanner.nextLine();
 
             System.out.println("🚚 Способ доставки:");
@@ -362,20 +501,25 @@ public class ClientUserStories {
             PaymentMethod paymentMethod = (paymentChoice == 1) ? PaymentMethod.CARD : PaymentMethod.CASH;
 
             Order order = orderService.createOrder(
-                currentUser.getId(),
-                cart.getRestaurantId(),
-                address,
-                deliveryType,
-                LocalDateTime.now().plusHours(1),
-                paymentMethod
+                    currentUser.getId(),
+                    cart.getRestaurantId(),
+                    address,
+                    deliveryType,
+                    LocalDateTime.now().plusHours(1),
+                    paymentMethod
             );
 
-            System.out.println("\n" + "✅".repeat(20));
             System.out.println("        🎉 ЗАКАЗ СОЗДАН УСПЕШНО!        ");
-            System.out.println("✅".repeat(20));
             System.out.println("📦 Номер заказа: " + order.getId());
             System.out.println("📊 Статус: " + order.getStatus());
             System.out.println("💰 Сумма: " + order.getTotalAmount() + " руб");
+            System.out.println("📍 Адрес: " + order.getDeliveryAddress());
+            System.out.println("🚚 Способ доставки: " + (deliveryType == DeliveryType.DELIVERY ? "Курьерская доставка" : "Самовывоз"));
+            System.out.println("💳 Способ оплаты: " + (paymentMethod == PaymentMethod.CARD ? "Картой онлайн" : "Наличными при получении"));
+
+            // Очищаем корзину после заказа
+            cartService.clearCart(currentUser.getId());
+            System.out.println("🛒 Корзина очищена");
 
         } catch (Exception e) {
             System.out.println("❌ Ошибка создания заказа: " + e.getMessage());
@@ -395,10 +539,11 @@ public class ClientUserStories {
 
             System.out.println("📊 История заказов:");
             for (Order order : orders) {
-                System.out.println("📦 Заказ #" + order.getId() +
-                    " | 📊 Статус: " + order.getStatus() +
-                    " | 💰 Сумма: " + order.getTotalAmount() + " руб" +
-                    " | 📅 Дата: " + order.getCreatedAt());
+                System.out.println("\n📦 Заказ #" + order.getId());
+                System.out.println("   📊 Статус: " + order.getStatus());
+                System.out.println("   💰 Сумма: " + order.getTotalAmount() + " руб");
+                System.out.println("   📅 Дата: " + order.getCreatedAt());
+                System.out.println("   📍 Адрес: " + order.getDeliveryAddress());
             }
 
         } catch (Exception e) {
@@ -527,6 +672,7 @@ public class ClientUserStories {
     private static void logout(AuthService authService) {
         authService.logout();
         currentUser = null;
+        currentRestaurant = null;
         System.out.println("👋 Выход из системы...");
     }
 }

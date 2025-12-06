@@ -16,7 +16,7 @@ public class MenuServiceImpl implements MenuService {
   @Override
   public List<Menu> getMenu(Long restaurantId) {
     List<Menu> menu = new ArrayList<>();
-    String sql = "SELECT * FROM menu_categories WHERE restaurant_id = ? AND is_available = true";
+    String sql = "SELECT * FROM dishes WHERE restaurant_id = ? AND is_available = true";
 
     try (Connection conn = DatabaseConfig.getConnection();
          PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -40,14 +40,11 @@ public class MenuServiceImpl implements MenuService {
           Integer calories = rs.getInt("calories");
           if (!rs.wasNull()) item.setCalories(calories);
 
-          Double weight = rs.getDouble("weight");
-          if (!rs.wasNull()) item.setWeight(weight);
-
           String imageUrl = rs.getString("image_url");
           if (imageUrl != null) item.setImageUrl(imageUrl);
 
-          Integer cookingTime = rs.getInt("cooking_time");
-          if (!rs.wasNull()) item.setCookingTime(cookingTime);
+          Integer preparationTimeMin = rs.getInt("preparation_time_min");
+          if (!rs.wasNull()) item.setCookingTime(preparationTimeMin);
 
           menu.add(item);
         }
@@ -61,7 +58,7 @@ public class MenuServiceImpl implements MenuService {
 
   @Override
   public Menu getMenuItem(Long restaurantId, Long itemId) {
-    String sql = "SELECT * FROM menu_categories WHERE restaurant_id = ? AND id = ? AND is_available = true";
+    String sql = "SELECT * FROM dishes WHERE restaurant_id = ? AND id = ? AND is_available = true";
 
     try (Connection conn = DatabaseConfig.getConnection();
          PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -86,14 +83,11 @@ public class MenuServiceImpl implements MenuService {
           Integer calories = rs.getInt("calories");
           if (!rs.wasNull()) item.setCalories(calories);
 
-          Double weight = rs.getDouble("weight");
-          if (!rs.wasNull()) item.setWeight(weight);
-
           String imageUrl = rs.getString("image_url");
           if (imageUrl != null) item.setImageUrl(imageUrl);
 
-          Integer cookingTime = rs.getInt("cooking_time");
-          if (!rs.wasNull()) item.setCookingTime(cookingTime);
+          Integer preparationTimeMin = rs.getInt("preparation_time_min");
+          if (!rs.wasNull()) item.setCookingTime(preparationTimeMin);
 
           return item;
         } else {
