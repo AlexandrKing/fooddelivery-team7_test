@@ -67,7 +67,7 @@ public class RestaurantService {
     }
 
     public Restaurant getRestaurantById(Long restaurantId) {
-        String sql = "SELECT * FROM restaurant WHERE id = ?";
+        String sql = "SELECT * FROM restaurants WHERE id = ?";
 
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -87,7 +87,7 @@ public class RestaurantService {
     }
 
     public boolean deactivateRestaurant(Long restaurantId) {
-        String sql = "UPDATE restaurant SET is_active = FALSE WHERE id = ?";
+        String sql = "UPDATE restaurants SET is_active = FALSE WHERE id = ?";
 
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -103,7 +103,7 @@ public class RestaurantService {
     }
 
     public boolean activateRestaurant(Long restaurantId) {
-        String sql = "UPDATE restaurant SET is_active = TRUE WHERE id = ?";
+        String sql = "UPDATE restaurants SET is_active = TRUE WHERE id = ?";
 
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
