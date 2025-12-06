@@ -30,9 +30,9 @@ public class DatabaseChecker {
       // 2. Проверяем основные таблицы (ожидаемые)
       System.out.println("\n✅ ПРОВЕРКА ОСНОВНЫХ ТАБЛИЦ:");
       String[] expectedTables = {
-          "client_users", "client_restaurants", "client_addresses",
+          "users", "client_restaurants", "client_addresses",
           "client_menu", "client_carts", "client_cart_items",
-          "client_orders", "client_order_items", "reviews",
+          "orders", "client_order_items", "reviews",
           "client_order_status_history", "admin_users", "courier_users",
           "courier_assigned_orders"
       };
@@ -182,10 +182,10 @@ public class DatabaseChecker {
 
   private static void showSampleData(Connection conn) throws SQLException {
     String[][] sampleTables = {
-        {"client_users", "Пользователи"},
+        {"users", "Пользователи"},
         {"client_restaurants", "Рестораны"},
         {"client_menu", "Меню"},
-        {"client_orders", "Заказы"}
+        {"orders", "Заказы"}
     };
 
     for (String[] tableInfo : sampleTables) {
@@ -236,7 +236,7 @@ public class DatabaseChecker {
   }
 
   private static void showStatistics(Connection conn) throws SQLException {
-    String[] tablesToCheck = {"client_users", "client_restaurants", "client_orders"};
+    String[] tablesToCheck = {"users", "client_restaurants", "orders"};
 
     for (String table : tablesToCheck) {
       if (tableExists(conn, table)) {
@@ -252,10 +252,10 @@ public class DatabaseChecker {
     }
 
     // Проверяем последние заказы
-    if (tableExists(conn, "client_orders")) {
+    if (tableExists(conn, "orders")) {
       System.out.println("\n   📦 ПОСЛЕДНИЕ ЗАКАЗЫ:");
       String sql = "SELECT id, user_id, status, total_amount, created_at " +
-          "FROM client_orders ORDER BY created_at DESC LIMIT 3";
+          "FROM orders ORDER BY created_at DESC LIMIT 3";
 
       try (Statement stmt = conn.createStatement();
            ResultSet rs = stmt.executeQuery(sql)) {

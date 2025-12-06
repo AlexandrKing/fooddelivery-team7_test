@@ -431,7 +431,7 @@ public class CourierService {
 
     public boolean addCommissionToCourier(Long orderId, Long courierId) {
         try {
-            String orderSql = "SELECT total_amount FROM client_orders WHERE id = ?";
+            String orderSql = "SELECT total_amount FROM orders WHERE id = ?";
             BigDecimal orderAmount = null;
 
             try (Connection conn = DatabaseConfig.getConnection();

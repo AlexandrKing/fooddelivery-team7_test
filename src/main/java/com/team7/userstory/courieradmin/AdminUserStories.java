@@ -6,6 +6,7 @@ import com.team7.service.courieradmin.ReviewService;
 import com.team7.service.courieradmin.ClientService;
 import com.team7.service.courieradmin.RestaurantService;
 import com.team7.service.courieradmin.OrderService;
+import com.team7.service.courieradmin.CourierOrderService;
 import com.team7.model.admin.Admin;
 import com.team7.model.courier.Courier;
 import com.team7.model.review.Review;
@@ -24,6 +25,7 @@ public class AdminUserStories {
     private static ClientService clientService = new ClientService();
     private static RestaurantService restaurantService = new RestaurantService();
     private static OrderService orderService = new OrderService();
+    private static CourierOrderService courierOrderService = new CourierOrderService();
     private static Scanner scanner = new Scanner(System.in);
 
     public static void main(String[] args) {
@@ -197,7 +199,7 @@ public class AdminUserStories {
             System.out.println("😔 Нет зарегистрированных курьеров");
         } else {
             System.out.printf("%-5s %-15s %-20s %-15s %-10s %-10s %-15s\n",
-                "ID", "Логин", "ФИО", "Статус", "Баланс", "Заказов", "Рейтинг");
+                    "ID", "Логин", "ФИО", "Статус", "Баланс", "Заказов", "Рейтинг");
             System.out.println("━".repeat(100));
 
             for (Courier courier : couriers) {
@@ -206,14 +208,14 @@ public class AdminUserStories {
                 if ("offline".equals(courier.getStatus())) statusEmoji = "⚫";
 
                 System.out.printf("%-5d %-15s %-20s %-15s %-10.2f %-10d %-15s\n",
-                    courier.getId(),
-                    courier.getUsername(),
-                    courier.getFullName().length() > 20 ?
-                        courier.getFullName().substring(0, 17) + "..." : courier.getFullName(),
-                    statusEmoji + " " + courier.getStatus(),
-                    courier.getBalance().doubleValue(),
-                    courier.getCompletedOrders(),
-                    "⭐ " + courier.getRating());
+                        courier.getId(),
+                        courier.getUsername(),
+                        courier.getFullName().length() > 20 ?
+                                courier.getFullName().substring(0, 17) + "..." : courier.getFullName(),
+                        statusEmoji + " " + courier.getStatus(),
+                        courier.getBalance().doubleValue(),
+                        courier.getCompletedOrders(),
+                        "⭐ " + courier.getRating());
             }
         }
         System.out.println("━".repeat(100));
@@ -229,19 +231,19 @@ public class AdminUserStories {
             System.out.println("😔 Нет доступных курьеров");
         } else {
             System.out.printf("%-5s %-15s %-20s %-15s %-10s %-15s\n",
-                "ID", "Логин", "ФИО", "Транспорт", "Заказов", "Рейтинг");
+                    "ID", "Логин", "ФИО", "Транспорт", "Заказов", "Рейтинг");
             System.out.println("━".repeat(90));
 
             for (Courier courier : couriers) {
                 System.out.printf("%-5d %-15s %-20s %-15s %-10d %-15s\n",
-                    courier.getId(),
-                    courier.getUsername(),
-                    courier.getFullName().length() > 20 ?
-                        courier.getFullName().substring(0, 17) + "..." : courier.getFullName(),
-                    getVehicleEmoji(courier.getVehicleType()) + " " +
-                        (courier.getVehicleType() != null ? courier.getVehicleType() : "не указан"),
-                    courier.getCompletedOrders(),
-                    "⭐ " + courier.getRating());
+                        courier.getId(),
+                        courier.getUsername(),
+                        courier.getFullName().length() > 20 ?
+                                courier.getFullName().substring(0, 17) + "..." : courier.getFullName(),
+                        getVehicleEmoji(courier.getVehicleType()) + " " +
+                                (courier.getVehicleType() != null ? courier.getVehicleType() : "не указан"),
+                        courier.getCompletedOrders(),
+                        "⭐ " + courier.getRating());
             }
         }
         System.out.println("━".repeat(90));
@@ -312,20 +314,20 @@ public class AdminUserStories {
             System.out.println("😔 Нет зарегистрированных клиентов");
         } else {
             System.out.printf("%-5s %-15s %-20s %-25s %-15s %-25s %-10s\n",
-                "ID", "Логин", "ФИО", "Email", "Телефон", "Адрес", "Статус");
+                    "ID", "Логин", "ФИО", "Email", "Телефон", "Адрес", "Статус");
             System.out.println("━".repeat(120));
 
             for (ClientService.Client client : clients) {
                 String status = client.getIsActive() ? "✅ Активен" : "⛔ Неактивен";
                 System.out.printf("%-5d %-15s %-20s %-25s %-15s %-25s %-10s\n",
-                    client.getId(),
-                    client.getUsername(),
-                    client.getFullName(),
-                    client.getEmail(),
-                    client.getPhone(),
-                    client.getAddress().length() > 25 ?
-                        client.getAddress().substring(0, 22) + "..." : client.getAddress(),
-                    status);
+                        client.getId(),
+                        client.getUsername(),
+                        client.getFullName(),
+                        client.getEmail(),
+                        client.getPhone(),
+                        client.getAddress() != null && client.getAddress().length() > 25 ?
+                                client.getAddress().substring(0, 22) + "..." : (client.getAddress() != null ? client.getAddress() : "не указан"),
+                        status);
             }
         }
         System.out.println("━".repeat(120));
@@ -396,20 +398,20 @@ public class AdminUserStories {
             System.out.println("😔 Нет зарегистрированных ресторанов");
         } else {
             System.out.printf("%-5s %-25s %-20s %-15s %-25s %-10s %-10s\n",
-                "ID", "Название", "Кухня", "Телефон", "Адрес", "Рейтинг", "Статус");
+                    "ID", "Название", "Кухня", "Телефон", "Адрес", "Рейтинг", "Статус");
             System.out.println("━".repeat(120));
 
             for (RestaurantService.Restaurant restaurant : restaurants) {
                 String status = restaurant.getIsActive() ? "✅ Активен" : "⛔ Неактивен";
                 System.out.printf("%-5d %-25s %-20s %-15s %-25s %-10.1f %-10s\n",
-                    restaurant.getId(),
-                    restaurant.getName(),
-                    restaurant.getCuisineType(),
-                    restaurant.getPhone(),
-                    restaurant.getAddress().length() > 25 ?
-                        restaurant.getAddress().substring(0, 22) + "..." : restaurant.getAddress(),
-                    restaurant.getRating() != null ? restaurant.getRating() : 0.0,
-                    status);
+                        restaurant.getId(),
+                        restaurant.getName(),
+                        restaurant.getCuisineType(),
+                        restaurant.getPhone(),
+                        restaurant.getAddress().length() > 25 ?
+                                restaurant.getAddress().substring(0, 22) + "..." : restaurant.getAddress(),
+                        restaurant.getRating() != null ? restaurant.getRating() : 0.0,
+                        status);
             }
         }
         System.out.println("━".repeat(120));
@@ -488,8 +490,8 @@ public class AdminUserStories {
                 System.out.println("   🚴 Курьер ID: " + review.getCourierId());
                 System.out.println("   ⭐ Рейтинг: " + getStars(review.getRating()));
                 System.out.println("   💬 Комментарий: " +
-                    (review.getComment() != null && !review.getComment().isEmpty() ?
-                        review.getComment() : "Нет комментария"));
+                        (review.getComment() != null && !review.getComment().isEmpty() ?
+                                review.getComment() : "Нет комментария"));
                 System.out.println("   📅 Дата: " + review.getCreatedAt());
                 System.out.println("   📋 Статус: " + status);
                 System.out.println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
@@ -509,9 +511,9 @@ public class AdminUserStories {
             for (Review review : reviews) {
                 System.out.println("⭐ " + getStars(review.getRating()));
                 System.out.println("💬 " + (review.getComment() != null ?
-                    (review.getComment().length() > 80 ?
-                        review.getComment().substring(0, 77) + "..." : review.getComment())
-                    : "Нет комментария"));
+                        (review.getComment().length() > 80 ?
+                                review.getComment().substring(0, 77) + "..." : review.getComment())
+                        : "Нет комментария"));
                 System.out.println("📅 " + review.getCreatedAt().toLocalDate());
                 System.out.println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
             }
@@ -581,14 +583,22 @@ public class AdminUserStories {
                 System.out.println("📦 Заказ #" + order.getId());
                 System.out.println("   👤 Клиент: " + (order.getClientName() != null ? order.getClientName() : "Неизвестно"));
                 System.out.println("   🍽️  Ресторан: " + (order.getRestaurantName() != null ? order.getRestaurantName() : "Неизвестно"));
-                System.out.println("   🚴 Курьер: " + (order.getCourierName() != null ? order.getCourierName() : "Не назначен"));
+
+                // Получаем имя курьера через courier_assigned_orders
+                Long courierId = orderService.getCourierIdForOrder(order.getId());
+                String courierName = "Не назначен";
+                if (courierId != null) {
+                    Courier courier = courierService.getCourierById(courierId);
+                    if (courier != null) {
+                        courierName = courier.getFullName();
+                    }
+                }
+                System.out.println("   🚴 Курьер: " + courierName);
+
                 System.out.println("   💰 Сумма: " + order.getTotalAmount() + " руб.");
                 System.out.println("   📍 Адрес доставки: " + order.getDeliveryAddress());
                 System.out.println("   📋 Статус: " + translateOrderStatus(order.getStatus()));
                 System.out.println("   📅 Дата создания: " + order.getCreatedAt());
-                if (order.getDeliveredAt() != null) {
-                    System.out.println("   ✅ Дата доставки: " + order.getDeliveredAt());
-                }
                 System.out.println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
             }
         }
@@ -615,7 +625,8 @@ public class AdminUserStories {
         Long courierId = scanner.nextLong();
         scanner.nextLine(); // consume newline
 
-        if (orderService.assignOrderToCourier(orderId, courierId)) {
+        // Используем CourierOrderService для назначения
+        if (courierOrderService.assignOrderToCourier(orderId, courierId)) {
             System.out.println("✅ Заказ #" + orderId + " назначен курьеру #" + courierId);
         } else {
             System.out.println("❌ Ошибка назначения заказа");
@@ -689,12 +700,12 @@ public class AdminUserStories {
             long totalCouriers = couriers.size();
             long activeCouriers = couriers.stream().filter(Courier::getIsActive).count();
             long availableCouriers = couriers.stream()
-                .filter(c -> "available".equals(c.getStatus()))
-                .count();
+                    .filter(c -> "available".equals(c.getStatus()))
+                    .count();
 
             BigDecimal totalCourierBalance = couriers.stream()
-                .map(Courier::getBalance)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+                    .map(Courier::getBalance)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
 
             System.out.println("\n👥 КУРЬЕРЫ:");
             System.out.println("   Всего: " + totalCouriers);
@@ -706,8 +717,8 @@ public class AdminUserStories {
             List<ClientService.Client> clients = clientService.getAllClients();
             long totalClients = clients.size();
             long activeClients = clients.stream()
-                .filter(ClientService.Client::getIsActive)
-                .count();
+                    .filter(ClientService.Client::getIsActive)
+                    .count();
 
             System.out.println("\n👤 КЛИЕНТЫ:");
             System.out.println("   Всего: " + totalClients);
@@ -717,14 +728,14 @@ public class AdminUserStories {
             List<RestaurantService.Restaurant> restaurants = restaurantService.getAllRestaurants();
             long totalRestaurants = restaurants.size();
             long activeRestaurants = restaurants.stream()
-                .filter(RestaurantService.Restaurant::getIsActive)
-                .count();
+                    .filter(RestaurantService.Restaurant::getIsActive)
+                    .count();
 
             double averageRestaurantRating = restaurants.stream()
-                .filter(r -> r.getRating() != null)
-                .mapToDouble(RestaurantService.Restaurant::getRating)
-                .average()
-                .orElse(0.0);
+                    .filter(r -> r.getRating() != null)
+                    .mapToDouble(RestaurantService.Restaurant::getRating)
+                    .average()
+                    .orElse(0.0);
 
             System.out.println("\n🍽️  РЕСТОРАНЫ:");
             System.out.println("   Всего: " + totalRestaurants);
@@ -734,45 +745,44 @@ public class AdminUserStories {
             // Заказы
             List<OrderService.Order> orders = orderService.getAllOrders();
             long totalOrders = orders.size();
-            long newOrders = orders.stream().filter(o -> "NEW".equals(o.getStatus())).count();
-            long assignedOrders = orders.stream().filter(o -> "ASSIGNED".equals(o.getStatus())).count();
+            long newOrders = orders.stream().filter(o -> "PENDING".equals(o.getStatus())).count();
+            long acceptedOrders = orders.stream().filter(o -> "ACCEPTED".equals(o.getStatus())).count();
             long deliveredOrders = orders.stream().filter(o -> "DELIVERED".equals(o.getStatus())).count();
             long cancelledOrders = orders.stream().filter(o -> "CANCELLED".equals(o.getStatus())).count();
 
             BigDecimal totalRevenue = orders.stream()
-                .filter(o -> "DELIVERED".equals(o.getStatus()) && o.getTotalAmount() != null)
-                .map(OrderService.Order::getTotalAmount)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+                    .filter(o -> "DELIVERED".equals(o.getStatus()) && o.getTotalAmount() != null)
+                    .map(OrderService.Order::getTotalAmount)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
 
             System.out.println("\n📦 ЗАКАЗЫ:");
             System.out.println("   Всего: " + totalOrders);
-            System.out.println("   Новых: " + newOrders);
-            System.out.println("   Назначенных: " + assignedOrders);
-            System.out.println("   Доставленных: " + deliveredOrders);
-            System.out.println("   Отмененных: " + cancelledOrders);
+            System.out.println("   Новых (PENDING): " + newOrders);
+            System.out.println("   Принятых (ACCEPTED): " + acceptedOrders);
+            System.out.println("   Доставленных (DELIVERED): " + deliveredOrders);
+            System.out.println("   Отмененных (CANCELLED): " + cancelledOrders);
             System.out.println("   Общая выручка: " + totalRevenue + " руб.");
 
             // Отзывы
             List<Review> reviews = reviewService.getAllReviews();
             long totalReviews = reviews.size();
-            long activeReviews = reviews.stream().filter(Review::getIsActive).count();
 
             double averageReviewRating = reviews.stream()
-                .mapToInt(Review::getRating)
-                .average()
-                .orElse(0.0);
+                    .mapToInt(Review::getRating)
+                    .average()
+                    .orElse(0.0);
 
             System.out.println("\n⭐ ОТЗЫВЫ:");
             System.out.println("   Всего: " + totalReviews);
-            System.out.println("   Активных: " + activeReviews);
             System.out.println("   Средний рейтинг: " + String.format("%.1f", averageReviewRating));
 
             System.out.println("\n⏰ СИСТЕМА:");
             System.out.println("   Текущее время: " + LocalDateTime.now().format(
-                DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss")));
+                    DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss")));
 
         } catch (Exception e) {
             System.out.println("❌ Ошибка получения статистики: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 
@@ -832,8 +842,10 @@ public class AdminUserStories {
     private static String translateOrderStatus(String status) {
         if (status == null) return "Неизвестно";
         switch (status.toUpperCase()) {
-            case "NEW": return "🆕 Новый";
-            case "ASSIGNED": return "🚴 Назначен";
+            case "PENDING": return "🆕 Ожидание";
+            case "ACCEPTED": return "✅ Принят";
+            case "COOKING": return "👨‍🍳 Готовится";
+            case "DELIVERING": return "🚚 Доставляется";
             case "DELIVERED": return "✅ Доставлен";
             case "CANCELLED": return "❌ Отменен";
             default: return status;
