@@ -49,7 +49,7 @@ public class RestaurantService {
 
   public List<Restaurant> getAllRestaurants() {
     List<Restaurant> restaurants = new ArrayList<>();
-    String sql = "SELECT * FROM restaurant ORDER BY created_at DESC";
+    String sql = "SELECT * FROM restaurants ORDER BY created_at DESC";
 
     try (Connection conn = DatabaseConfig.getConnection();
          Statement stmt = conn.createStatement();
