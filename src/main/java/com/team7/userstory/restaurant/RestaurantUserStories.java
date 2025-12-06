@@ -377,7 +377,7 @@ public class RestaurantUserStories {
     // Телефон
     String newPhone = null;
     while (true) {
-      System.out.print("Новый телефон: ");
+      System.out.println("\nНовый телефон (оставьте пустым чтобы не менять): ");
       newPhone = scanner.nextLine().trim();
 
       if (newPhone.isEmpty()) {
@@ -403,7 +403,7 @@ public class RestaurantUserStories {
     // Адрес
     String newAddress = null;
     while (true) {
-      System.out.print("Новый адрес: ");
+      System.out.println("\nНовый адрес (оставьте пустым чтобы не менять): ");
       newAddress = scanner.nextLine().trim();
 
       if (newAddress.isEmpty()) {
@@ -475,9 +475,11 @@ public class RestaurantUserStories {
     System.out.println("2. ✅ Показать доступные блюда");
     System.out.println("3. 📁 Показать категории меню");
     System.out.println("4. ➕ Добавить категорию меню");
-    System.out.println("5. ↩️  Назад");
+    System.out.println("5. ❌ Удалить категорию меню");
+    System.out.println("6. ✏️  Редактировать категорию меню");
+    System.out.println("7. ↩️  Назад");
 
-    int choice = InputUtils.readInt(scanner, "Выберите действие (1-5): ");
+    int choice = InputUtils.readInt(scanner, "Выберите действие (1-7): ");
 
     switch (choice) {
       case 1:
@@ -493,6 +495,12 @@ public class RestaurantUserStories {
         addMenuCategory(scanner);
         break;
       case 5:
+        removeMenuCategory(scanner);
+        break;
+      case 6:
+        updateMenuCategory(scanner);
+        break;
+      case 7:
         return;
       default:
         System.out.println("❌ Неверный выбор!");
@@ -571,20 +579,154 @@ public class RestaurantUserStories {
     System.out.println("━".repeat(50));
   }
 
+  private static void removeMenuCategory(Scanner scanner) {
+    System.out.println("\n" + "=".repeat(40));
+    System.out.println("        ❌ УДАЛЕНИЕ КАТЕГОРИИ МЕНЮ        ");
+    System.out.println("=".repeat(40));
+
+    // Показываем текущие категории
+    showMenuCategories();
+
+    List<MenuCategory> categories = currentRestaurant.getMenuCategories();
+    if (categories.isEmpty()) {
+      System.out.println("😔 Нет категорий для удаления");
+      return;
+    }
+
+    System.out.print("Введите номер категории для удаления (1-" + categories.size() + "): ");
+    int categoryNumber;
+    try {
+      categoryNumber = Integer.parseInt(scanner.nextLine().trim());
+      if (categoryNumber < 1 || categoryNumber > categories.size()) {
+        System.out.println("❌ Ошибка: Некорректный номер категории!");
+        return;
+      }
+    } catch (NumberFormatException e) {
+      System.out.println("❌ Ошибка: Введите число!");
+      return;
+    }
+
+    MenuCategory categoryToRemove = categories.get(categoryNumber - 1);
+
+    // Проверяем, есть ли блюда в этой категории
+    List<Dish> dishesInCategory = menuService.getDishesByCategory(currentRestaurant.getId(), categoryToRemove.getId());
+    if (dishesInCategory != null && !dishesInCategory.isEmpty()) {
+      System.out.println("⚠️  В этой категории есть " + dishesInCategory.size() + " блюд!");
+      System.out.print("   Вы уверены, что хотите удалить категорию? (да/нет): ");
+      String confirm = scanner.nextLine().toLowerCase();
+      if (!confirm.equals("да") && !confirm.equals("yes")) {
+        System.out.println("❌ Удаление отменено");
+        return;
+      }
+    }
+
+    System.out.print("Вы уверены, что хотите удалить категорию \"" +
+        categoryToRemove.getName() + "\"? (да/нет): ");
+    String confirm = scanner.nextLine().toLowerCase();
+
+    if (confirm.equals("да") || confirm.equals("yes")) {
+      boolean removed = menuService.removeMenuCategory(currentRestaurant.getId(), categoryToRemove.getId());
+      if (removed) {
+        // Обновляем список категорий в ресторане
+        currentRestaurant.getMenuCategories().remove(categoryNumber - 1);
+        System.out.println("✅ Категория \"" + categoryToRemove.getName() + "\" успешно удалена!");
+      } else {
+        System.out.println("❌ Ошибка удаления категории");
+      }
+    } else {
+      System.out.println("❌ Удаление отменено");
+    }
+  }
+
+  private static void updateMenuCategory(Scanner scanner) {
+    System.out.println("\n" + "=".repeat(40));
+    System.out.println("        ✏️  РЕДАКТИРОВАНИЕ КАТЕГОРИИ МЕНЮ        ");
+    System.out.println("=".repeat(40));
+
+    // Показываем текущие категории
+    showMenuCategories();
+
+    List<MenuCategory> categories = currentRestaurant.getMenuCategories();
+    if (categories.isEmpty()) {
+      System.out.println("😔 Нет категорий для редактирования");
+      return;
+    }
+
+    System.out.print("Введите номер категории для редактирования (1-" + categories.size() + "): ");
+    int categoryNumber;
+    try {
+      categoryNumber = Integer.parseInt(scanner.nextLine().trim());
+      if (categoryNumber < 1 || categoryNumber > categories.size()) {
+        System.out.println("❌ Ошибка: Некорректный номер категории!");
+        return;
+      }
+    } catch (NumberFormatException e) {
+      System.out.println("❌ Ошибка: Введите число!");
+      return;
+    }
+
+    MenuCategory categoryToUpdate = categories.get(categoryNumber - 1);
+
+    System.out.println("\n📋 Текущие данные категории:");
+    System.out.println("   Название: " + categoryToUpdate.getName());
+    System.out.println("   Описание: " +
+        (categoryToUpdate.getDescription() != null ? categoryToUpdate.getDescription() : "Не указано"));
+
+    System.out.println("\n💡 Введите новые данные (оставьте пустым чтобы не менять):");
+
+    System.out.print("Новое название: ");
+    String newName = scanner.nextLine().trim();
+
+    System.out.print("Новое описание: ");
+    String newDescription = scanner.nextLine().trim();
+
+    // Создаем объект с обновленными данными
+    MenuCategory updatedCategory = new MenuCategory();
+    updatedCategory.setId(categoryToUpdate.getId());
+    updatedCategory.setName(newName.isEmpty() ? categoryToUpdate.getName() : newName);
+    updatedCategory.setDescription(newDescription.isEmpty() ? categoryToUpdate.getDescription() : newDescription);
+
+    boolean updated = menuService.updateMenuCategory(currentRestaurant.getId(), updatedCategory);
+    if (updated) {
+      // Обновляем категорию в списке ресторана
+      categoryToUpdate.setName(updatedCategory.getName());
+      categoryToUpdate.setDescription(updatedCategory.getDescription());
+      System.out.println("✅ Категория успешно обновлена!");
+    } else {
+      System.out.println("❌ Ошибка обновления категории");
+    }
+  }
+
   private static void showMenuCategories() {
     List<MenuCategory> categories = currentRestaurant.getMenuCategories();
     System.out.println("\n" + "━".repeat(50));
     System.out.println("        📁 КАТЕГОРИИ МЕНЮ (" + categories.size() + ")        ");
     System.out.println("━".repeat(50));
+
     if (categories.isEmpty()) {
       System.out.println("😔 Категорий нет");
     } else {
       int index = 1;
       for (MenuCategory category : categories) {
-        System.out.printf("%2d. %-20s - %s%n",
+        String description = category.getDescription();
+        if (description == null || description.isEmpty()) {
+          description = "Описание отсутствует";
+        }
+
+        // Получаем количество блюд в категории
+        int dishCount = 0;
+        try {
+          List<Dish> dishes = menuService.getDishesByCategory(currentRestaurant.getId(), category.getId());
+          dishCount = dishes != null ? dishes.size() : 0;
+        } catch (Exception e) {
+          // Игнорируем ошибки при получении количества блюд
+        }
+
+        System.out.printf("%2d. %-20s | 📝 %-30s | 🍽️  Блюд: %d%n",
             index++,
             category.getName(),
-            category.getDescription());
+            description.length() > 30 ? description.substring(0, 27) + "..." : description,
+            dishCount);
       }
     }
     System.out.println("━".repeat(50));
@@ -594,6 +736,7 @@ public class RestaurantUserStories {
     System.out.println("\n" + "=".repeat(40));
     System.out.println("        ➕ ДОБАВЛЕНИЕ КАТЕГОРИИ МЕНЮ        ");
     System.out.println("=".repeat(40));
+
     System.out.print("Название категории: ");
     String name = scanner.nextLine().trim();
 
@@ -605,13 +748,20 @@ public class RestaurantUserStories {
     System.out.print("Описание категории: ");
     String description = scanner.nextLine().trim();
 
-    // Здесь нужно вызвать метод сервиса для добавления категории
-    // Пока просто добавляем в список ресторана
+    // Используем MenuService для добавления категории в базу данных
     MenuCategory category = new MenuCategory();
     category.setName(name);
-    category.setDescription(description);
-    currentRestaurant.getMenuCategories().add(category);
-    System.out.println("✅ Категория \"" + name + "\" добавлена!");
+    category.setDescription(description.isEmpty() ? null : description);
+    category.setRestaurantId(currentRestaurant.getId());
+
+    MenuCategory addedCategory = menuService.addMenuCategory(currentRestaurant.getId(), category);
+    if (addedCategory != null) {
+      // Добавляем категорию в список ресторана
+      currentRestaurant.getMenuCategories().add(addedCategory);
+      System.out.println("✅ Категория \"" + name + "\" добавлена!");
+    } else {
+      System.out.println("❌ Ошибка добавления категории");
+    }
   }
 
   private static void addDish(Scanner scanner) {

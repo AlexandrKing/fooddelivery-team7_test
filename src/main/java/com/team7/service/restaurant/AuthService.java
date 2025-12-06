@@ -1,5 +1,6 @@
 package com.team7.service.restaurant;
 
+import com.team7.model.restaurant.MenuCategory;
 import com.team7.service.config.DatabaseConfig;
 import com.team7.model.restaurant.Restaurant;
 import lombok.Getter;
@@ -180,7 +181,6 @@ public class AuthService implements AuthOperations {
       return null;
     }
 
-    // ИСПРАВЛЕНО: было restaurant, стало restaurants
     String sql = "SELECT * FROM restaurants WHERE LOWER(email) = LOWER(?) AND password = ?";
 
     try (Connection conn = DatabaseConfig.getConnection();
@@ -206,7 +206,14 @@ public class AuthService implements AuthOperations {
         updateLastLogin(rs.getLong("id"));
         Restaurant restaurant = mapResultSetToRestaurant(rs);
         currentRestaurant = restaurant;
+
+        // ЗАГРУЖАЕМ КАТЕГОРИИ МЕНЮ ПОСЛЕ УСПЕШНОГО ВХОДА
+        MenuService menuService = new MenuService();
+        List<MenuCategory> categories = menuService.getMenuCategoriesByRestaurantId(restaurant.getId());
+        restaurant.setMenuCategories(categories);
+
         System.out.println("✅ Вход выполнен успешно! Добро пожаловать, " + restaurant.getName());
+        System.out.println("📁 Загружено категорий меню: " + categories.size());
         return restaurant;
       } else {
         System.out.println("❌ Неверный email или пароль");

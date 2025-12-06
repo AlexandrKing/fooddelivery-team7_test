@@ -260,6 +260,36 @@ public class DatabaseInitializer {
       stmt.execute("SET CONSTRAINTS ALL IMMEDIATE");
     }
 
+    System.out.println("\n🔄 СБРОС ПОСЛЕДОВАТЕЛЬНОСТЕЙ (SEQUENCES)...");
+    try (Statement stmt = conn.createStatement()) {
+      // Список всех sequences для таблиц с автоинкрементом
+      String[] resetSequences = {
+          "ALTER SEQUENCE users_id_seq RESTART WITH 100",
+          "ALTER SEQUENCE restaurants_id_seq RESTART WITH 100",
+          "ALTER SEQUENCE menu_categories_id_seq RESTART WITH 100",
+          "ALTER SEQUENCE dishes_id_seq RESTART WITH 100",
+          "ALTER SEQUENCE addresses_id_seq RESTART WITH 100",
+          "ALTER SEQUENCE carts_id_seq RESTART WITH 100",
+          "ALTER SEQUENCE cart_items_id_seq RESTART WITH 100",
+          "ALTER SEQUENCE orders_id_seq RESTART WITH 100",
+          "ALTER SEQUENCE order_items_id_seq RESTART WITH 100",
+          "ALTER SEQUENCE admin_users_id_seq RESTART WITH 100",
+          "ALTER SEQUENCE courier_users_id_seq RESTART WITH 100",
+          "ALTER SEQUENCE courier_assigned_orders_id_seq RESTART WITH 100",
+          "ALTER SEQUENCE reviews_id_seq RESTART WITH 100",
+          "ALTER SEQUENCE order_status_history_id_seq RESTART WITH 100"
+      };
+
+      for (String sql : resetSequences) {
+        try {
+          stmt.execute(sql);
+          System.out.println("   ✅ Сброшен sequence: " + sql);
+        } catch (SQLException e) {
+          System.err.println("   ⚠️  Ошибка сброса sequence: " + e.getMessage());
+        }
+      }
+    }
+
     System.out.println("📊 Загружено файлов: " + insertedFiles + "/" + insertFiles.length);
     System.out.println("📊 Всего строк добавлено: " + totalRows);
   }
