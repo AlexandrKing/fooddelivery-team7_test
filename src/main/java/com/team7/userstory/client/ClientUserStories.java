@@ -19,6 +19,7 @@ public class ClientUserStories {
         MenuService menuService = new MenuServiceImpl();
         CartService cartService = new CartServiceImpl();
         OrderService orderService = new OrderServiceImpl(cartService);
+        ReviewService reviewService = new ReviewServiceImpl();
 
         Scanner scanner = new Scanner(System.in);
         boolean running = true;
@@ -32,9 +33,10 @@ public class ClientUserStories {
                 System.out.println("2. 📋 Просмотр меню текущего ресторана");
                 System.out.println("3. 🛒 Корзина");
                 System.out.println("4. 📦 Мои заказы");
-                System.out.println("5. 👤 Профиль");
-                System.out.println("6. 🚪 Выйти из системы");
-                System.out.println("7. ❌ Выйти из программы");
+                System.out.println("5. 📝 Управление отзывами"); // ⬅️ НОВЫЙ ПУНКТ
+                System.out.println("6. 👤 Профиль");
+                System.out.println("7. 🚪 Выйти из системы");
+                System.out.println("8. ❌ Выйти из программы");
 
                 if (currentRestaurant != null) {
                     System.out.println("📍 Текущий ресторан: " + currentRestaurant.getName());
@@ -51,7 +53,7 @@ public class ClientUserStories {
 
             try {
                 if (currentUser != null) {
-                    handleUserMenu(choice, authService, restaurantService, menuService, cartService, orderService, scanner);
+                    handleUserMenu(choice, authService, restaurantService, menuService, cartService, orderService, reviewService, scanner);
                 } else {
                     handleAuthMenu(choice, authService, scanner);
                 }
@@ -68,6 +70,7 @@ public class ClientUserStories {
                                        MenuService menuService,
                                        CartService cartService,
                                        OrderService orderService,
+                                       ReviewService reviewService, // ⬅️ ДОБАВЬТЕ ЭТОТ ПАРАМЕТР
                                        Scanner scanner) {
         switch (choice) {
             case 1:
@@ -87,18 +90,204 @@ public class ClientUserStories {
                 viewOrders(orderService, scanner);
                 break;
             case 5:
-                manageProfile(authService, scanner);
+                manageReviews(reviewService, orderService, scanner); // ⬅️ НОВЫЙ ПУНКТ
                 break;
             case 6:
-                logout(authService);
+                manageProfile(authService, scanner);
                 break;
             case 7:
+                logout(authService);
+                break;
+            case 8:
                 System.out.println("👋 Выход из программы...");
                 System.exit(0);
                 break;
             default:
                 System.out.println("❌ Неверный выбор!");
         }
+    }
+
+    private static void manageReviews(ReviewService reviewService, OrderService orderService, Scanner scanner) {
+        System.out.println("\n=== 📝 УПРАВЛЕНИЕ ОТЗЫВАМИ ===");
+
+        // Получаем заказы пользователя
+        List<Order> orders = orderService.getUserOrders(currentUser.getId());
+
+        if (orders.isEmpty()) {
+            System.out.println("😔 У вас еще нет заказов");
+            return;
+        }
+
+        // Показываем меню для отзывов
+        System.out.println("1. ✍️  Оставить отзыв на заказ");
+        System.out.println("2. 📋 Посмотреть мои отзывы");
+        System.out.println("3. ↩️  Назад");
+
+        System.out.print("Выберите действие: ");
+        int choice = scanner.nextInt();
+        scanner.nextLine();
+
+        switch (choice) {
+            case 1:
+                createReview(reviewService, orderService, orders, scanner);
+                break;
+            case 2:
+                viewMyReviews(reviewService);
+                break;
+            case 3:
+                return;
+            default:
+                System.out.println("❌ Неверный выбор!");
+        }
+    }
+
+    private static void createReview(ReviewService reviewService, OrderService orderService,
+                                     List<Order> orders, Scanner scanner) {
+        System.out.println("\n=== ✍️  СОЗДАНИЕ ОТЗЫВА ===");
+
+        // Показываем заказы, доступные для отзыва
+        System.out.println("📦 Ваши заказы:");
+        int index = 1;
+        for (Order order : orders) {
+            System.out.println(index++ + ". Заказ #" + order.getId() +
+                " | Сумма: " + order.getTotalAmount() + " руб" +
+                " | Статус: " + order.getStatus() +
+                " | Дата: " + order.getCreatedAt());
+        }
+
+        System.out.print("\nВыберите номер заказа для отзыва: ");
+        int orderChoice = scanner.nextInt();
+        scanner.nextLine();
+
+        if (orderChoice < 1 || orderChoice > orders.size()) {
+            System.out.println("❌ Неверный выбор заказа!");
+            return;
+        }
+
+        Order selectedOrder = orders.get(orderChoice - 1);
+
+        // Проверяем, можно ли оставить отзыв на этот заказ
+        if (selectedOrder.getStatus() != OrderStatus.DELIVERED) {
+            System.out.println("⚠️  Отзыв можно оставить только на доставленные заказы");
+            System.out.println("📦 Статус этого заказа: " + selectedOrder.getStatus());
+            return;
+        }
+
+        System.out.println("\n📋 Информация о заказе:");
+        System.out.println("   #" + selectedOrder.getId() + " | " + selectedOrder.getCreatedAt());
+        System.out.println("   Сумма: " + selectedOrder.getTotalAmount() + " руб");
+        System.out.println("   Адрес доставки: " + selectedOrder.getDeliveryAddress());
+
+        // Оценка ресторана
+        System.out.print("\n⭐ Оцените ресторан (1-5, 0 - пропустить): ");
+        int restaurantRating = scanner.nextInt();
+        scanner.nextLine();
+
+        // Оценка курьера
+        System.out.print("⭐ Оцените курьера (1-5, 0 - пропустить): ");
+        int courierRating = scanner.nextInt();
+        scanner.nextLine();
+
+        // Комментарий
+        System.out.print("📝 Комментарий (необязательно): ");
+        String comment = scanner.nextLine();
+
+        // Валидация оценок
+        if (restaurantRating != 0 && (restaurantRating < 1 || restaurantRating > 5)) {
+            System.out.println("❌ Оценка ресторана должна быть от 1 до 5");
+            return;
+        }
+
+        if (courierRating != 0 && (courierRating < 1 || courierRating > 5)) {
+            System.out.println("❌ Оценка курьера должна быть от 1 до 5");
+            return;
+        }
+
+        // Создаем отзыв
+        try {
+            Integer restaurantRatingObj = restaurantRating == 0 ? null : restaurantRating;
+            Integer courierRatingObj = courierRating == 0 ? null : courierRating;
+
+            Review review = reviewService.createReview(
+                selectedOrder.getId(),
+                restaurantRatingObj,
+                courierRatingObj,
+                comment
+            );
+
+            System.out.println("\n" + "✅".repeat(30));
+            System.out.println("        🎉 ОТЗЫВ УСПЕШНО СОЗДАН!        ");
+            System.out.println("✅".repeat(30));
+            System.out.println("📦 Номер заказа: " + selectedOrder.getId());
+            if (review.getRestaurantRating() != null) {
+                System.out.println("⭐ Оценка ресторана: " + review.getRestaurantRating() + "/5");
+            }
+            if (review.getCourierRating() != null) {
+                System.out.println("⭐ Оценка курьера: " + review.getCourierRating() + "/5");
+            }
+            if (review.getComment() != null && !review.getComment().isEmpty()) {
+                System.out.println("📝 Ваш комментарий: " + review.getComment());
+            }
+            System.out.println("📅 Дата отзыва: " + review.getCreatedAt());
+
+        } catch (Exception e) {
+            System.out.println("❌ Ошибка создания отзыва: " + e.getMessage());
+        }
+    }
+
+    private static void viewMyReviews(ReviewService reviewService) {
+        System.out.println("\n=== 📋 МОИ ОТЗЫВЫ ===");
+
+        try {
+            List<Review> reviews = reviewService.getReviews(currentUser.getId());
+
+            if (reviews.isEmpty()) {
+                System.out.println("😔 У вас еще нет отзывов");
+                return;
+            }
+
+            System.out.println("📊 Всего отзывов: " + reviews.size());
+            System.out.println("-".repeat(50));
+
+            for (Review review : reviews) {
+                System.out.println("📦 Заказ #" + review.getOrderId());
+
+                if (review.getRestaurantRating() != null) {
+                    System.out.println("   🍽️  Ресторан: " + getStars(review.getRestaurantRating()));
+                }
+
+                if (review.getCourierRating() != null) {
+                    System.out.println("   🚚 Курьер: " + getStars(review.getCourierRating()));
+                }
+
+                if (review.getComment() != null && !review.getComment().isEmpty()) {
+                    System.out.println("   📝 Комментарий: " + review.getComment());
+                }
+
+                System.out.println("   📅 Дата: " + review.getCreatedAt());
+                System.out.println("-".repeat(30));
+            }
+
+            // Средние оценки
+            Double avgRestaurantRating = reviewService.getRestaurantRating(currentUser.getId());
+            Double avgCourierRating = reviewService.getCourierRating(currentUser.getId());
+
+            System.out.println("\n📈 Средние оценки:");
+            if (avgRestaurantRating > 0) {
+                System.out.println("   🍽️  Средняя оценка ресторанов: " + String.format("%.1f", avgRestaurantRating) + "/5");
+            }
+            if (avgCourierRating > 0) {
+                System.out.println("   🚚 Средняя оценка курьеров: " + String.format("%.1f", avgCourierRating) + "/5");
+            }
+
+        } catch (Exception e) {
+            System.out.println("❌ Ошибка получения отзывов: " + e.getMessage());
+        }
+    }
+
+    // Вспомогательный метод для звездочек
+    private static String getStars(int rating) {
+        return "⭐".repeat(rating) + " (" + rating + "/5)";
     }
 
     private static void handleAuthMenu(int choice, AuthService authService,
@@ -568,6 +757,21 @@ public class ClientUserStories {
                 System.out.println("   💰 Сумма: " + order.getTotalAmount() + " руб");
                 System.out.println("   📅 Дата: " + order.getCreatedAt());
                 System.out.println("   📍 Адрес: " + order.getDeliveryAddress());
+
+                // Показываем возможность оставить отзыв для доставленных заказов
+                if (order.getStatus() == OrderStatus.DELIVERED) {
+                    System.out.println("   ✅ Этот заказ можно оценить!");
+                }
+            }
+
+            // Предлагаем оставить отзыв
+            System.out.print("\n📝 Хотите оставить отзыв на доставленный заказ? (да/нет): ");
+            String answer = scanner.nextLine().trim().toLowerCase();
+
+            if (answer.equals("да") || answer.equals("д") || answer.equals("yes") || answer.equals("y")) {
+                // Здесь можно вызвать метод для создания отзыва
+                // Для простоты можно сразу перейти к созданию отзыва
+                System.out.println("🎯 Перейдите в раздел 'Отзывы' в главном меню!");
             }
 
         } catch (Exception e) {
