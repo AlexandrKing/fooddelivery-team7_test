@@ -74,11 +74,11 @@ public class ClientUserStories {
                                        Scanner scanner) {
         switch (choice) {
             case 1:
-                searchRestaurants(restaurantService, menuService, cartService, scanner);
+                searchRestaurants(restaurantService,orderService, menuService, cartService, scanner);
                 break;
             case 2:
                 if (currentRestaurant != null) {
-                    viewRestaurantMenu(menuService, cartService, scanner);
+                    viewRestaurantMenu(menuService,orderService, cartService, scanner);
                 } else {
                     System.out.println("⚠️  Сначала выберите ресторан через пункт 'Поиск ресторанов'");
                 }
@@ -360,6 +360,7 @@ public class ClientUserStories {
     }
 
     private static void searchRestaurants(RestaurantService restaurantService,
+                                          OrderService orderService,
                                           MenuService menuService,
                                           CartService cartService,
                                           Scanner scanner) {
@@ -393,7 +394,7 @@ public class ClientUserStories {
                 System.out.println("\n        ВЫБРАН РЕСТОРАН: " + selectedRestaurant.getName().toUpperCase());
 
                 // Сразу показываем меню выбранного ресторана
-                viewRestaurantMenu(menuService, cartService, scanner);
+                viewRestaurantMenu(menuService,orderService, cartService, scanner);
             }
 
         } catch (Exception e) {
@@ -401,7 +402,7 @@ public class ClientUserStories {
         }
     }
 
-    private static void viewRestaurantMenu(MenuService menuService, CartService cartService, Scanner scanner) {
+    private static void viewRestaurantMenu(MenuService menuService,    OrderService orderService, CartService cartService, Scanner scanner) {
         if (currentRestaurant == null) {
             System.out.println("⚠️  Ресторан не выбран!");
             return;
@@ -457,7 +458,7 @@ public class ClientUserStories {
                         break;
                     case 2:
                         Restaurant savedRestaurant = currentRestaurant;
-                        manageCart(cartService, null, scanner);
+                        manageCart(cartService, orderService, scanner);
                         if (currentRestaurant == null && savedRestaurant != null) {
                             currentRestaurant = savedRestaurant;
                         }
