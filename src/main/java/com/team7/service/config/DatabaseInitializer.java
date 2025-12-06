@@ -118,11 +118,11 @@ public class DatabaseInitializer {
         "008_create_orders.sql",
         "009_create_order_items.sql",
         // Переносим создание courier_users ПЕРЕД reviews
-        "012_create_admin_users.sql",
-        "013_create_courier_users.sql",  // Теперь создается ДО reviews
-        "014_create_courier_assigned_orders.sql",
-        "010_create_reviews.sql",        // Теперь будет работать
-        "011_create_order_status_history.sql"
+        "010_create_admin_users.sql",
+        "011_create_courier_users.sql",  // Теперь создается ДО reviews
+        "012_create_courier_assigned_orders.sql",
+        "013_create_reviews.sql",        // Теперь будет работать
+        "014_create_order_status_history.sql"
     };
 
     int createdCount = 0;
@@ -165,11 +165,11 @@ public class DatabaseInitializer {
         "007_create_cart_items_indexes.sql",
         "008_create_orders_indexes.sql",
         "009_create_order_items_indexes.sql",
-        "010_create_reviews_indexes.sql",
-        "011_create_order_status_history_indexes.sql",
-        "012_create_admin_users_indexes.sql",
-        "013_create_couriers_users_indexes.sql",
-        "014_create_courier_assigned_orders_indexes.sql"
+        "010_create_admin_users_indexes.sql",
+        "011_create_courier_users_indexes.sql",
+        "012_create_courier_assigned_orders_indexes.sql",
+        "013_create_reviews_indexes.sql",
+        "014_create_order_status_history_indexes.sql",
     };
 
     int createdIndexes = 0;
@@ -210,11 +210,11 @@ public class DatabaseInitializer {
         "007_insert_cart_items.sql",
         "008_insert_orders.sql",
         "009_insert_order_items.sql",
-        "011_insert_reviews.sql",
-        "012_insert_order_status_history.sql",
-        "013_insert_admin_users.sql",
-        "010_insert_courier_users.sql",
-        "014_insert_courier_assigned_orders.sql"
+        "010_insert_admin_users.sql",
+        "011_insert_courier_users.sql",
+        "012_insert_courier_assigned_orders.sql",
+        "013_insert_reviews.sql",
+        "014_insert_order_status_history.sql",
     };
 
     int insertedFiles = 0;
