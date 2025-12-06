@@ -698,7 +698,7 @@ public class RestaurantUserStories {
   }
 
   private static void showMenuCategories() {
-    List<MenuCategory> categories = currentRestaurant.getMenuCategories();
+    List<MenuCategory> categories = menuService.getMenuCategoriesByRestaurantId(currentRestaurant.getId());
     System.out.println("\n" + "━".repeat(50));
     System.out.println("        📁 КАТЕГОРИИ МЕНЮ (" + categories.size() + ")        ");
     System.out.println("━".repeat(50));
@@ -708,18 +708,12 @@ public class RestaurantUserStories {
     } else {
       int index = 1;
       for (MenuCategory category : categories) {
+        // Получаем количество блюд в категории
+        int dishCount = menuService.getDishCountByCategory(currentRestaurant.getId(), category.getId());
+
         String description = category.getDescription();
         if (description == null || description.isEmpty()) {
           description = "Описание отсутствует";
-        }
-
-        // Получаем количество блюд в категории
-        int dishCount = 0;
-        try {
-          List<Dish> dishes = menuService.getDishesByCategory(currentRestaurant.getId(), category.getId());
-          dishCount = dishes != null ? dishes.size() : 0;
-        } catch (Exception e) {
-          // Игнорируем ошибки при получении количества блюд
         }
 
         System.out.printf("%2d. %-20s | 📝 %-30s | 🍽️  Блюд: %d%n",
@@ -768,6 +762,30 @@ public class RestaurantUserStories {
     System.out.println("\n" + "=".repeat(40));
     System.out.println("        ➕ ДОБАВЛЕНИЕ БЛЮДА        ");
     System.out.println("=".repeat(40));
+
+    // Сначала показываем категории
+    List<MenuCategory> categories = menuService.getMenuCategoriesByRestaurantId(currentRestaurant.getId());
+    if (categories.isEmpty()) {
+      System.out.println("❌ Сначала создайте категорию меню!");
+      return;
+    }
+
+    System.out.println("📁 Доступные категории:");
+    for (int i = 0; i < categories.size(); i++) {
+      MenuCategory category = categories.get(i);
+      // Показываем также количество блюд в каждой категории
+      int dishCount = menuService.getDishCountByCategory(currentRestaurant.getId(), category.getId());
+      System.out.printf("%2d. %s (🍽️ %d блюд)%n", i + 1, category.getName(), dishCount);
+    }
+
+    int choice = InputUtils.readInt(scanner, "Выберите категорию (1-" + categories.size() + "): ");
+    if (choice < 1 || choice > categories.size()) {
+      System.out.println("❌ Неверный выбор!");
+      return;
+    }
+
+    MenuCategory selectedCategory = categories.get(choice - 1);
+
     System.out.print("Название блюда: ");
     String name = scanner.nextLine().trim();
 
@@ -781,15 +799,18 @@ public class RestaurantUserStories {
 
     BigDecimal price = InputUtils.readBigDecimal(scanner, "Цена (руб.): ");
 
+    // Создаем блюдо
     Dish dish = new Dish();
     dish.setName(name);
     dish.setDescription(description);
     dish.setPrice(price);
     dish.setAvailable(true);
+    dish.setRestaurantId(currentRestaurant.getId());
+    dish.setMenuCategoryId(selectedCategory.getId()); // КРИТИЧЕСКИ ВАЖНО: устанавливаем категорию!
 
     Dish addedDish = menuService.addDishToMenu(currentRestaurant.getId(), dish);
     if (addedDish != null) {
-      System.out.println("✅ Блюдо \"" + name + "\" успешно добавлено!");
+      System.out.println("✅ Блюдо \"" + name + "\" успешно добавлено в категорию \"" + selectedCategory.getName() + "\"!");
     } else {
       System.out.println("❌ Ошибка добавления блюда");
     }

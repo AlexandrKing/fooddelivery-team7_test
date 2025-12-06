@@ -13,18 +13,24 @@ public class MenuService implements MenuOperations {
 
   @Override
   public Dish addDishToMenu(Long restaurantId, Dish dish) {
-    // ИСПРАВЛЕНО: Добавлено указание, что id будет сгенерировано автоматически
-    String sql = "INSERT INTO dishes (restaurant_id, name, description, price, is_available, created_at, updated_at) VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP) RETURNING *";
+    // ДОБАВЛЕНО: поле menu_category_id
+    String sql = "INSERT INTO dishes (restaurant_id, name, description, price, is_available, menu_category_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP) RETURNING *";
 
     try (Connection conn = DatabaseConfig.getConnection();
          PreparedStatement stmt = conn.prepareStatement(sql)) {
 
-      // Параметры в правильном порядке
-      stmt.setLong(1, restaurantId);      // restaurant_id
-      stmt.setString(2, dish.getName());   // name
-      stmt.setString(3, dish.getDescription()); // description
-      stmt.setBigDecimal(4, dish.getPrice());   // price
-      stmt.setBoolean(5, dish.getAvailable());  // is_available
+      stmt.setLong(1, restaurantId);
+      stmt.setString(2, dish.getName());
+      stmt.setString(3, dish.getDescription());
+      stmt.setBigDecimal(4, dish.getPrice());
+      stmt.setBoolean(5, dish.getAvailable());
+
+      // ВАЖНО: Добавляем menu_category_id
+      if (dish.getMenuCategoryId() != null) {
+        stmt.setLong(6, dish.getMenuCategoryId());
+      } else {
+        stmt.setNull(6, Types.BIGINT);
+      }
 
       ResultSet rs = stmt.executeQuery();
 
@@ -242,6 +248,8 @@ public class MenuService implements MenuOperations {
     return dish;
   }
 
+
+
   public MenuCategory createCategory(Long restaurantId, String name, String description) {
     // ИСПРАВЛЕНО: было menu_categories, но это правильно
     String sql = "INSERT INTO menu_categories (name, description, restaurant_id, created_at) VALUES (?, ?, ?, CURRENT_TIMESTAMP) RETURNING *";
@@ -387,6 +395,25 @@ public class MenuService implements MenuOperations {
       System.err.println("❌ Ошибка при удалении категории: " + e.getMessage());
       return false;
     }
+  }
+
+  public int getDishCountByCategory(Long restaurantId, Long categoryId) {
+    String sql = "SELECT COUNT(*) FROM dishes WHERE restaurant_id = ? AND menu_category_id = ?";
+
+    try (Connection conn = DatabaseConfig.getConnection();
+         PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+      pstmt.setLong(1, restaurantId);
+      pstmt.setLong(2, categoryId);
+
+      ResultSet rs = pstmt.executeQuery();
+      if (rs.next()) {
+        return rs.getInt(1);
+      }
+    } catch (SQLException e) {
+      System.out.println("❌ Ошибка подсчета блюд: " + e.getMessage());
+    }
+    return 0;
   }
 
   public boolean updateMenuCategory(Long restaurantId, MenuCategory category) {

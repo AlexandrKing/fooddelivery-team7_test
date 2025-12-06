@@ -33,6 +33,15 @@ public class Dish {
     return isAvailable;
   }
 
+  public Long getMenuCategoryId() {
+    return menuCategoryId;
+  }
+
+  public void setMenuCategoryId(Long menuCategoryId) {
+    this.menuCategoryId = menuCategoryId;
+  }
+
+
   public void setAvailable(Boolean available) {
     this.isAvailable = available;
   }
