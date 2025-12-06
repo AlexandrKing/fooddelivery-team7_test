@@ -108,7 +108,7 @@ public class    Main {
                     System.out.println("\n❌ Неверный выбор! Введите число от 1 до 5.");
             }
 
-            /*if (running && !choice.equals("5")) {
+            if (running && !choice.equals("5")) {
                 System.out.println("\n" + "─".repeat(70));
                 System.out.print("↩️  Вернуться в главное меню? (да/нет): ");
                 String answer = scanner.nextLine().trim().toLowerCase();
@@ -117,7 +117,7 @@ public class    Main {
                     running = false;
                     System.out.println("\n👋 Завершение работы...");
                 }
-            }*/
+            }
         }
 
         scanner.close();
