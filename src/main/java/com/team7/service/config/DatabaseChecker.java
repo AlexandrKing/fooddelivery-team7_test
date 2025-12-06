@@ -32,7 +32,7 @@ public class DatabaseChecker {
       String[] expectedTables = {
           "client_users", "client_restaurants", "client_addresses",
           "client_menu", "client_carts", "client_cart_items",
-          "client_orders", "client_order_items", "client_reviews",
+          "client_orders", "client_order_items", "reviews",
           "client_order_status_history", "admin_users", "courier_users",
           "courier_assigned_orders"
       };

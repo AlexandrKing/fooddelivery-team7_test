@@ -11,7 +11,7 @@ public class ReviewService {
 
   public List<Review> getAllReviews() {
     List<Review> reviews = new ArrayList<>();
-    String sql = "SELECT * FROM client_reviews ORDER BY created_at DESC";
+    String sql = "SELECT * FROM reviews ORDER BY created_at DESC";
 
     try (Connection conn = DatabaseConfig.getConnection();
          Statement stmt = conn.createStatement();
@@ -30,7 +30,7 @@ public class ReviewService {
 
   public List<Review> getActiveReviews() {
     List<Review> reviews = new ArrayList<>();
-    String sql = "SELECT * FROM client_reviews WHERE is_active = TRUE ORDER BY created_at DESC";
+    String sql = "SELECT * FROM reviews WHERE is_active = TRUE ORDER BY created_at DESC";
 
     try (Connection conn = DatabaseConfig.getConnection();
          Statement stmt = conn.createStatement();
@@ -49,7 +49,7 @@ public class ReviewService {
 
   public List<Review> getReviewsByRestaurantId(Long restaurantId) {
     List<Review> reviews = new ArrayList<>();
-    String sql = "SELECT * FROM client_reviews WHERE restaurant_id = ? AND is_active = TRUE ORDER BY rating DESC, created_at DESC";
+    String sql = "SELECT * FROM reviews WHERE restaurant_id = ? AND is_active = TRUE ORDER BY rating DESC, created_at DESC";
 
     try (Connection conn = DatabaseConfig.getConnection();
          PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -70,7 +70,7 @@ public class ReviewService {
 
   public List<Review> getReviewsByCourierId(Long courierId) {
     List<Review> reviews = new ArrayList<>();
-    String sql = "SELECT * FROM client_reviews WHERE courier_id = ? AND is_active = TRUE ORDER BY rating DESC, created_at DESC";
+    String sql = "SELECT * FROM reviews WHERE courier_id = ? AND is_active = TRUE ORDER BY rating DESC, created_at DESC";
 
     try (Connection conn = DatabaseConfig.getConnection();
          PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -90,7 +90,7 @@ public class ReviewService {
   }
 
   public Review getReviewById(Long reviewId) {
-    String sql = "SELECT * FROM client_reviews WHERE id = ?";
+    String sql = "SELECT * FROM reviews WHERE id = ?";
 
     try (Connection conn = DatabaseConfig.getConnection();
          PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -110,7 +110,7 @@ public class ReviewService {
   }
 
   public boolean deactivateReview(Long reviewId) {
-    String sql = "UPDATE client_reviews SET is_active = FALSE WHERE id = ?";
+    String sql = "UPDATE reviews SET is_active = FALSE WHERE id = ?";
 
     try (Connection conn = DatabaseConfig.getConnection();
          PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -126,7 +126,7 @@ public class ReviewService {
   }
 
   public boolean activateReview(Long reviewId) {
-    String sql = "UPDATE client_reviews SET is_active = TRUE WHERE id = ?";
+    String sql = "UPDATE reviews SET is_active = TRUE WHERE id = ?";
 
     try (Connection conn = DatabaseConfig.getConnection();
          PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -142,7 +142,7 @@ public class ReviewService {
   }
 
   public boolean deleteReview(Long reviewId) {
-    String sql = "DELETE FROM client_reviews WHERE id = ?";
+    String sql = "DELETE FROM reviews WHERE id = ?";
 
     try (Connection conn = DatabaseConfig.getConnection();
          PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -158,7 +158,7 @@ public class ReviewService {
   }
 
   public double getAverageRatingForRestaurant(Long restaurantId) {
-    String sql = "SELECT AVG(rating) as avg_rating FROM client_reviews WHERE restaurant_id = ? AND is_active = TRUE";
+    String sql = "SELECT AVG(rating) as avg_rating FROM reviews WHERE restaurant_id = ? AND is_active = TRUE";
 
     try (Connection conn = DatabaseConfig.getConnection();
          PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -178,7 +178,7 @@ public class ReviewService {
   }
 
   public double getAverageRatingForCourier(Long courierId) {
-    String sql = "SELECT AVG(rating) as avg_rating FROM client_reviews WHERE courier_id = ? AND is_active = TRUE";
+    String sql = "SELECT AVG(rating) as avg_rating FROM reviews WHERE courier_id = ? AND is_active = TRUE";
 
     try (Connection conn = DatabaseConfig.getConnection();
          PreparedStatement stmt = conn.prepareStatement(sql)) {
