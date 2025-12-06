@@ -4,6 +4,7 @@ import com.team7.service.config.DatabaseConfig;
 import com.team7.model.restaurant.Dish;
 import com.team7.model.restaurant.MenuCategory;
 
+import java.math.BigDecimal;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -12,17 +13,18 @@ public class MenuService implements MenuOperations {
 
   @Override
   public Dish addDishToMenu(Long restaurantId, Dish dish) {
-    // ИСПРАВЛЕНО: было dish, стало dishes
-    String sql = "INSERT INTO dishes (name, description, price, is_available, restaurant_id, created_at) VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP) RETURNING *";
+    // ИСПРАВЛЕНО: Добавлено указание, что id будет сгенерировано автоматически
+    String sql = "INSERT INTO dishes (restaurant_id, name, description, price, is_available, created_at, updated_at) VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP) RETURNING *";
 
     try (Connection conn = DatabaseConfig.getConnection();
          PreparedStatement stmt = conn.prepareStatement(sql)) {
 
-      stmt.setString(1, dish.getName());
-      stmt.setString(2, dish.getDescription());
-      stmt.setBigDecimal(3, dish.getPrice());
-      stmt.setBoolean(4, dish.getAvailable());
-      stmt.setLong(5, restaurantId);
+      // Параметры в правильном порядке
+      stmt.setLong(1, restaurantId);      // restaurant_id
+      stmt.setString(2, dish.getName());   // name
+      stmt.setString(3, dish.getDescription()); // description
+      stmt.setBigDecimal(4, dish.getPrice());   // price
+      stmt.setBoolean(5, dish.getAvailable());  // is_available
 
       ResultSet rs = stmt.executeQuery();
 
@@ -31,6 +33,7 @@ public class MenuService implements MenuOperations {
       }
     } catch (SQLException e) {
       e.printStackTrace();
+      System.err.println("❌ Ошибка при добавлении блюда: " + e.getMessage());
     }
     return null;
   }
@@ -56,22 +59,53 @@ public class MenuService implements MenuOperations {
 
   @Override
   public boolean updateDish(Long restaurantId, Dish updatedDish) {
-    // ИСПРАВЛЕНО: было dish, стало dishes
-    String sql = "UPDATE dishes SET name = ?, description = ?, price = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND restaurant_id = ?";
+    // Сначала получим текущее блюдо
+    String getSql = "SELECT * FROM dishes WHERE id = ? AND restaurant_id = ?";
 
     try (Connection conn = DatabaseConfig.getConnection();
-         PreparedStatement stmt = conn.prepareStatement(sql)) {
+         PreparedStatement getStmt = conn.prepareStatement(getSql)) {
 
-      stmt.setString(1, updatedDish.getName());
-      stmt.setString(2, updatedDish.getDescription());
-      stmt.setBigDecimal(3, updatedDish.getPrice());
-      stmt.setLong(4, updatedDish.getId());
-      stmt.setLong(5, restaurantId);
+      getStmt.setLong(1, updatedDish.getId());
+      getStmt.setLong(2, restaurantId);
+      ResultSet rs = getStmt.executeQuery();
 
-      int rowsUpdated = stmt.executeUpdate();
-      return rowsUpdated > 0;
+      if (!rs.next()) {
+        return false; // Блюдо не найдено
+      }
+
+      // Используем текущие значения для полей, которые не указаны
+      String currentName = rs.getString("name");
+      String currentDescription = rs.getString("description");
+      BigDecimal currentPrice = rs.getBigDecimal("price");
+
+      // Обновляем только указанные поля
+      String name = (updatedDish.getName() != null && !updatedDish.getName().trim().isEmpty())
+          ? updatedDish.getName()
+          : currentName;
+      String description = (updatedDish.getDescription() != null)
+          ? updatedDish.getDescription()
+          : currentDescription;
+      BigDecimal price = (updatedDish.getPrice() != null)
+          ? updatedDish.getPrice()
+          : currentPrice;
+
+      // Теперь выполняем обновление
+      String updateSql = "UPDATE dishes SET name = ?, description = ?, price = ?, updated_at = CURRENT_TIMESTAMP " +
+          "WHERE id = ? AND restaurant_id = ?";
+
+      try (PreparedStatement updateStmt = conn.prepareStatement(updateSql)) {
+        updateStmt.setString(1, name);
+        updateStmt.setString(2, description);
+        updateStmt.setBigDecimal(3, price);
+        updateStmt.setLong(4, updatedDish.getId());
+        updateStmt.setLong(5, restaurantId);
+
+        int rowsUpdated = updateStmt.executeUpdate();
+        return rowsUpdated > 0;
+      }
 
     } catch (SQLException e) {
+      System.err.println("❌ Ошибка при обновлении блюда: " + e.getMessage());
       e.printStackTrace();
     }
     return false;
@@ -115,6 +149,34 @@ public class MenuService implements MenuOperations {
       e.printStackTrace();
     }
     return dishes;
+  }
+
+  public List<MenuCategory> getMenuCategoriesByRestaurantId(Long restaurantId) {
+    List<MenuCategory> categories = new ArrayList<>();
+    try (Connection conn = DatabaseConfig.getConnection()) {
+      String sql = "SELECT id, name, description, created_at FROM menu_categories WHERE restaurant_id = ? ORDER BY name";
+      try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        pstmt.setLong(1, restaurantId);
+        ResultSet rs = pstmt.executeQuery();
+        while (rs.next()) {
+          MenuCategory category = new MenuCategory();
+          category.setId(rs.getLong("id"));
+          category.setName(rs.getString("name"));
+          category.setDescription(rs.getString("description"));
+          category.setRestaurantId(restaurantId);
+          try {
+            category.setCreatedAt(rs.getTimestamp("created_at").toLocalDateTime());
+          } catch (Exception e) {
+            // Игнорируем если поля нет
+          }
+          categories.add(category);
+        }
+      }
+    } catch (SQLException e) {
+      System.err.println("❌ Ошибка при получении категорий меню: " + e.getMessage());
+      e.printStackTrace();
+    }
+    return categories;
   }
 
   @Override
@@ -270,5 +332,101 @@ public class MenuService implements MenuOperations {
     } catch (SQLException e) {
       e.printStackTrace();
     }
+  }
+  // Добавьте в конец класса MenuService, но перед последней закрывающей фигурной скобкой
+
+  public MenuCategory addMenuCategory(Long restaurantId, MenuCategory category) {
+    try (Connection conn = DatabaseConfig.getConnection()) {
+      String sql = "INSERT INTO menu_categories (name, description, restaurant_id, created_at) " +
+          "VALUES (?, ?, ?, CURRENT_TIMESTAMP) RETURNING id";
+      try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        pstmt.setString(1, category.getName());
+        pstmt.setString(2, category.getDescription());
+        pstmt.setLong(3, restaurantId);
+
+        ResultSet rs = pstmt.executeQuery();
+        if (rs.next()) {
+          category.setId(rs.getLong("id"));
+          return category;
+        }
+      }
+    } catch (SQLException e) {
+      System.err.println("❌ Ошибка при добавлении категории: " + e.getMessage());
+    }
+    return null;
+  }
+
+  public boolean removeMenuCategory(Long restaurantId, Long categoryId) {
+    try (Connection conn = DatabaseConfig.getConnection()) {
+      // Проверяем, есть ли блюда в этой категории
+      String checkDishesSQL = "SELECT COUNT(*) FROM dishes WHERE restaurant_id = ? AND menu_category_id = ?";
+      try (PreparedStatement pstmt = conn.prepareStatement(checkDishesSQL)) {
+        pstmt.setLong(1, restaurantId);
+        pstmt.setLong(2, categoryId);
+        ResultSet rs = pstmt.executeQuery();
+        if (rs.next() && rs.getInt(1) > 0) {
+          // Если есть блюда, устанавливаем menu_category_id в NULL
+          String updateDishesSQL = "UPDATE dishes SET menu_category_id = NULL WHERE restaurant_id = ? AND menu_category_id = ?";
+          try (PreparedStatement updateStmt = conn.prepareStatement(updateDishesSQL)) {
+            updateStmt.setLong(1, restaurantId);
+            updateStmt.setLong(2, categoryId);
+            updateStmt.executeUpdate();
+          }
+        }
+      }
+
+      // Удаляем категорию
+      String deleteCategorySQL = "DELETE FROM menu_categories WHERE id = ? AND restaurant_id = ?";
+      try (PreparedStatement pstmt = conn.prepareStatement(deleteCategorySQL)) {
+        pstmt.setLong(1, categoryId);
+        pstmt.setLong(2, restaurantId);
+        int affectedRows = pstmt.executeUpdate();
+        return affectedRows > 0;
+      }
+    } catch (SQLException e) {
+      System.err.println("❌ Ошибка при удалении категории: " + e.getMessage());
+      return false;
+    }
+  }
+
+  public boolean updateMenuCategory(Long restaurantId, MenuCategory category) {
+    try (Connection conn = DatabaseConfig.getConnection()) {
+      String sql = "UPDATE menu_categories SET name = ?, description = ? WHERE id = ? AND restaurant_id = ?";
+      try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        pstmt.setString(1, category.getName());
+        pstmt.setString(2, category.getDescription());
+        pstmt.setLong(3, category.getId());
+        pstmt.setLong(4, restaurantId);
+        int affectedRows = pstmt.executeUpdate();
+        return affectedRows > 0;
+      }
+    } catch (SQLException e) {
+      System.err.println("❌ Ошибка при обновлении категории: " + e.getMessage());
+      return false;
+    }
+  }
+
+  public List<Dish> getDishesByCategory(Long restaurantId, Long categoryId) {
+    List<Dish> dishes = new ArrayList<>();
+    try (Connection conn = DatabaseConfig.getConnection()) {
+      String sql = "SELECT * FROM dishes WHERE restaurant_id = ? AND menu_category_id = ?";
+      try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        pstmt.setLong(1, restaurantId);
+        pstmt.setLong(2, categoryId);
+        ResultSet rs = pstmt.executeQuery();
+        while (rs.next()) {
+          Dish dish = new Dish();
+          dish.setId(rs.getLong("id"));
+          dish.setName(rs.getString("name"));
+          dish.setDescription(rs.getString("description"));
+          dish.setPrice(rs.getBigDecimal("price"));
+          dish.setAvailable(rs.getBoolean("is_available"));
+          dishes.add(dish);
+        }
+      }
+    } catch (SQLException e) {
+      System.err.println("❌ Ошибка при получении блюд по категории: " + e.getMessage());
+    }
+    return dishes;
   }
 }
