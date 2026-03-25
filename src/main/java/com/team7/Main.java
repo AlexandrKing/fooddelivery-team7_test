@@ -1,5 +1,6 @@
 package com.team7;
 
+import com.team7.config.LegacyRuntimeGuard;
 import com.team7.service.config.DatabaseConfig;
 import com.team7.service.config.DatabaseInitializer;
 import com.team7.userstory.client.ClientUserStories;
@@ -9,8 +10,14 @@ import com.team7.userstory.courieradmin.AdminUserStories;
 
 import java.util.Scanner;
 
+/**
+ * @deprecated Legacy console entrypoint. Use {@link FoodDeliveryApplication} for Spring Boot runtime.
+ */
+// TODO(legacy-cleanup): remove with userstory/* in Wave 3 after final legacy shutdown.
+@Deprecated(forRemoval = false, since = "1.1")
 public class    Main {
     public static void main(String[] args) {
+        LegacyRuntimeGuard.requireLegacyConsoleEnabled();
         Scanner scanner = new Scanner(System.in);
 
         System.out.println("╔══════════════════════════════════════════════════════════╗");

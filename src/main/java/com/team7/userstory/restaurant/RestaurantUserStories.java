@@ -1,5 +1,6 @@
 package com.team7.userstory.restaurant;
 
+import com.team7.config.LegacyRuntimeGuard;
 import com.team7.service.restaurant.AuthService;
 import com.team7.service.restaurant.RestaurantService;
 import com.team7.service.restaurant.MenuService;
@@ -11,6 +12,11 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Scanner;
 
+/**
+ * @deprecated Legacy console user stories. Prefer REST API controllers.
+ */
+// TODO(legacy-cleanup): remove in Wave 3 after runtime fully switches to REST only.
+@Deprecated(forRemoval = false, since = "1.1")
 public class RestaurantUserStories {
   private static Restaurant currentRestaurant = null;
   private static MenuService menuService = new MenuService();
@@ -71,6 +77,7 @@ public class RestaurantUserStories {
   }
 
   public static void main(String[] args) {
+    LegacyRuntimeGuard.requireLegacyConsoleEnabled();
     AuthService authService = new AuthService();
     RestaurantService restaurantService = new RestaurantService();
     Scanner scanner = new Scanner(System.in);

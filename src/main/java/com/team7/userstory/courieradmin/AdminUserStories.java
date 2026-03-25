@@ -1,5 +1,6 @@
 package com.team7.userstory.courieradmin;
 
+import com.team7.config.LegacyRuntimeGuard;
 import com.team7.service.courieradmin.AdminService;
 import com.team7.service.courieradmin.CourierService;
 import com.team7.service.courieradmin.ReviewService;
@@ -17,6 +18,11 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Scanner;
 
+/**
+ * @deprecated Legacy console user stories. Prefer REST API controllers.
+ */
+// TODO(legacy-cleanup): remove in Wave 3 after runtime fully switches to REST only.
+@Deprecated(forRemoval = false, since = "1.1")
 public class AdminUserStories {
     private static Admin currentAdmin = null;
     private static AdminService adminService = new AdminService();
@@ -29,6 +35,7 @@ public class AdminUserStories {
     private static Scanner scanner = new Scanner(System.in);
 
     public static void main(String[] args) {
+        LegacyRuntimeGuard.requireLegacyConsoleEnabled();
         boolean running = true;
 
         System.out.println("=".repeat(50));

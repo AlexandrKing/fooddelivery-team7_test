@@ -1,8 +1,10 @@
 package com.team7.service.client;
 
 import com.team7.model.client.Order;
+import org.springframework.stereotype.Service;
 import java.util.List;
 
+@Service
 public class HistoryServiceImpl implements HistoryService {
     private final OrderService orderService;
 

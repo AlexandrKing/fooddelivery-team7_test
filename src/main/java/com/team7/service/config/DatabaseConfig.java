@@ -4,6 +4,11 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 
+/**
+ * @deprecated Legacy JDBC access. Prefer Spring DataSource/JdbcTemplate beans.
+ */
+// TODO(legacy-cleanup): remove in Wave 3 after all services stop using legacy JDBC paths.
+@Deprecated(forRemoval = false, since = "1.1")
 public class DatabaseConfig {
   // Параметры из docker-compose.yml
   private static final String URL = "jdbc:postgresql://localhost:5432/restaurant_db";

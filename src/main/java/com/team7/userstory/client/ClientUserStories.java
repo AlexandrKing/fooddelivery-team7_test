@@ -1,5 +1,6 @@
 package com.team7.userstory.client;
 
+import com.team7.config.LegacyRuntimeGuard;
 import com.team7.service.client.*;
 import com.team7.model.client.*;
 import com.team7.service.config.DatabaseConfig;
@@ -8,11 +9,17 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Scanner;
 
+/**
+ * @deprecated Legacy console user stories. Prefer REST API controllers.
+ */
+// TODO(legacy-cleanup): remove in Wave 3 after runtime fully switches to REST only.
+@Deprecated(forRemoval = false, since = "1.1")
 public class ClientUserStories {
     private static User currentUser = null;
     private static Restaurant currentRestaurant = null;
 
     public static void main(String[] args) {
+        LegacyRuntimeGuard.requireLegacyConsoleEnabled();
         // Создаем сервисы без DatabaseConfig
         AuthService authService = new AuthServiceImpl();
         RestaurantService restaurantService = new RestaurantServiceImpl();

@@ -2,21 +2,35 @@ package com.team7.service.client;
 
 import com.team7.model.client.User;
 import com.team7.model.client.Address;
-import com.team7.service.config.DatabaseConfig;
+import com.team7.repository.client.ClientAuthRepository;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
-import java.sql.*;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.regex.Pattern;
 
+@Service
 public class AuthServiceImpl implements AuthService {
     private User currentUser;
 
     private static final Pattern EMAIL_PATTERN = Pattern.compile("^[\\w.-]+@[\\w.-]+\\.[a-zA-Z]{2,}$");
     private static final Pattern PHONE_PATTERN = Pattern.compile("^\\+79[0-9]{9}$");
 
+    private final ClientAuthRepository authRepository;
+    private final PasswordEncoder passwordEncoder;
+
+    // TODO(legacy-cleanup): remove this constructor after userstory/* is deleted in Wave 3.
+    @Deprecated(forRemoval = false, since = "1.1")
     public AuthServiceImpl() {
-        // Конструктор без параметров
+        this.authRepository = new ClientAuthRepository();
+        this.passwordEncoder = new com.team7.security.LegacyAwarePasswordEncoder();
+    }
+
+    @Autowired
+    public AuthServiceImpl(ClientAuthRepository authRepository, PasswordEncoder passwordEncoder) {
+        this.authRepository = authRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @Override
@@ -41,55 +55,23 @@ public class AuthServiceImpl implements AuthService {
             throw new IllegalArgumentException("Номер телефона уже используется");
         }
 
-        String sql = "INSERT INTO users (full_name, email, password, phone) VALUES (?, ?, ?, ?) RETURNING id";
-
-        try (Connection conn = DatabaseConfig.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-            pstmt.setString(1, name);
-            pstmt.setString(2, email);
-            pstmt.setString(3, password);
-            pstmt.setString(4, phone);
-
-            ResultSet rs = pstmt.executeQuery();
-            if (rs.next()) {
-                User user = new User();
-                user.setId(rs.getLong("id"));
-                user.setName(name);
-                user.setEmail(email);
-                user.setPhone(phone);
-                user.setPassword(password);
-                user.setAddresses(new ArrayList<>());
-                return user;
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException("Ошибка при регистрации: " + e.getMessage(), e);
+        ClientAuthRepository repository = requireRepository();
+        User created = repository.createUser(name, email, phone, passwordEncoder.encode(password));
+        created.setPassword(password);
+        if (created.getAddresses() == null) {
+            created.setAddresses(new ArrayList<>());
         }
-
-        throw new RuntimeException("Не удалось зарегистрировать пользователя");
+        return created;
     }
 
     @Override
     public User login(String email, String password) {
-        String sql = "SELECT * FROM users WHERE email = ? AND password = ?";
-
-        try (Connection conn = DatabaseConfig.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-            pstmt.setString(1, email);
-            pstmt.setString(2, password);
-
-            ResultSet rs = pstmt.executeQuery();
-            if (rs.next()) {
-                User user = mapUserFromResultSet(rs);
-                currentUser = user;
-                return user;
-            } else {
-                throw new IllegalArgumentException("Пользователь не найден или неверный пароль");
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException("Ошибка при входе: " + e.getMessage(), e);
+        User user = requireRepository().findByEmail(email);
+        if (user == null || !passwordEncoder.matches(password, user.getPassword())) {
+            throw new IllegalArgumentException("Пользователь не найден или неверный пароль");
         }
+        currentUser = user;
+        return user;
     }
 
     @Override
@@ -104,202 +86,53 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public boolean isEmailAvailable(String email) {
-        String sql = "SELECT COUNT(*) FROM users WHERE email = ?";
-
-        try (Connection conn = DatabaseConfig.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-            pstmt.setString(1, email);
-            ResultSet rs = pstmt.executeQuery();
-
-            if (rs.next()) {
-                return rs.getInt(1) == 0;
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException("Ошибка проверки email: " + e.getMessage(), e);
-        }
-        return true;
+        return requireRepository().countByEmail(email) == 0;
     }
 
     @Override
     public boolean isPhoneAvailable(String phone) {
-        String sql = "SELECT COUNT(*) FROM users WHERE phone = ?";
-
-        try (Connection conn = DatabaseConfig.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-            pstmt.setString(1, phone);
-            ResultSet rs = pstmt.executeQuery();
-
-            if (rs.next()) {
-                return rs.getInt(1) == 0;
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException("Ошибка проверки телефона: " + e.getMessage(), e);
-        }
-        return true;
+        return requireRepository().countByPhone(phone) == 0;
     }
 
     @Override
     public User updateProfile(User updatedUser) {
-        String sql = "UPDATE users SET full_name = ?, phone = ?, email = ? WHERE id = ?";
-
-        try (Connection conn = DatabaseConfig.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-            pstmt.setString(1, updatedUser.getName());
-            pstmt.setString(2, updatedUser.getPhone());
-            pstmt.setString(3, updatedUser.getEmail());
-            pstmt.setLong(4, updatedUser.getId());
-
-            int rows = pstmt.executeUpdate();
-            if (rows > 0) {
-                // Обновляем адреса
-                List<Address> addresses = getUserAddresses(updatedUser.getId(), conn);
-                updatedUser.setAddresses(addresses);
-
-                if (currentUser != null && currentUser.getId().equals(updatedUser.getId())) {
-                    currentUser = updatedUser;
-                }
-                return updatedUser;
-            } else {
-                throw new IllegalArgumentException("Пользователь не найден");
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException("Ошибка обновления профиля: " + e.getMessage(), e);
+        int rows = requireRepository().updateProfile(updatedUser);
+        if (rows <= 0) {
+            throw new IllegalArgumentException("Пользователь не найден");
         }
+        User refreshed = requireUserById(updatedUser.getId());
+        if (currentUser != null && currentUser.getId().equals(updatedUser.getId())) {
+            currentUser = refreshed;
+        }
+        return refreshed;
     }
 
     @Override
     public User addAddress(Long userId, Address address) {
-        String sql = "INSERT INTO addresses (user_id, label, address, apartment) VALUES (?, ?, ?, ?)";
-
-        try (Connection conn = DatabaseConfig.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
-
-            pstmt.setLong(1, userId);
-            pstmt.setString(2, address.getLabel());
-            pstmt.setString(3, address.getAddress());
-            pstmt.setString(4, address.getApartment());
-
-            int rows = pstmt.executeUpdate();
-            if (rows > 0) {
-                ResultSet rs = pstmt.getGeneratedKeys();
-                if (rs.next()) {
-                    address.setId(rs.getLong(1));
-
-                    // Получаем обновленного пользователя с адресами
-                    User user = getUserById(userId, conn);
-                    if (currentUser != null && currentUser.getId().equals(userId)) {
-                        currentUser = user;
-                    }
-                    return user;
-                }
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException("Ошибка добавления адреса: " + e.getMessage(), e);
+        requireRepository().addAddress(userId, address);
+        User user = requireUserById(userId);
+        if (currentUser != null && currentUser.getId().equals(userId)) {
+            currentUser = user;
         }
-        throw new RuntimeException("Не удалось добавить адрес");
+        return user;
     }
 
     @Override
     public User changePassword(Long userId, String oldPassword, String newPassword) {
-        // Сначала проверяем старый пароль
-        String checkSql = "SELECT COUNT(*) FROM users WHERE id = ? AND password = ?";
-
-        try (Connection conn = DatabaseConfig.getConnection();
-             PreparedStatement checkStmt = conn.prepareStatement(checkSql)) {
-
-            checkStmt.setLong(1, userId);
-            checkStmt.setString(2, oldPassword);
-
-            ResultSet rs = checkStmt.executeQuery();
-            if (rs.next() && rs.getInt(1) == 0) {
-                throw new IllegalArgumentException("Неверный текущий пароль");
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException("Ошибка проверки пароля: " + e.getMessage(), e);
+        ClientAuthRepository repository = requireRepository();
+        String storedPassword = repository.findPasswordByUserId(userId);
+        if (storedPassword == null || !passwordEncoder.matches(oldPassword, storedPassword)) {
+            throw new IllegalArgumentException("Неверный текущий пароль");
         }
-
-        // Обновляем пароль
-        String updateSql = "UPDATE users SET password = ? WHERE id = ?";
-
-        try (Connection conn = DatabaseConfig.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(updateSql)) {
-
-            pstmt.setString(1, newPassword);
-            pstmt.setLong(2, userId);
-
-            int rows = pstmt.executeUpdate();
-            if (rows > 0) {
-                User user = getUserById(userId);
-                if (currentUser != null && currentUser.getId().equals(userId)) {
-                    currentUser = user;
-                }
-                return user;
-            } else {
-                throw new IllegalArgumentException("Пользователь не найден");
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException("Ошибка смены пароля: " + e.getMessage(), e);
+        int rows = repository.updatePassword(userId, passwordEncoder.encode(newPassword));
+        if (rows <= 0) {
+            throw new IllegalArgumentException("Пользователь не найден");
         }
-    }
-
-    private User getUserById(Long userId) {
-        try (Connection conn = DatabaseConfig.getConnection()) {
-            return getUserById(userId, conn);
-        } catch (SQLException e) {
-            throw new RuntimeException("Ошибка получения пользователя: " + e.getMessage(), e);
+        User user = requireUserById(userId);
+        if (currentUser != null && currentUser.getId().equals(userId)) {
+            currentUser = user;
         }
-    }
-
-    private User getUserById(Long userId, Connection conn) throws SQLException {
-        String sql = "SELECT * FROM users WHERE id = ?";
-
-        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setLong(1, userId);
-            ResultSet rs = pstmt.executeQuery();
-
-            if (rs.next()) {
-                return mapUserFromResultSet(rs);
-            }
-        }
-        return null;
-    }
-
-    private User mapUserFromResultSet(ResultSet rs) throws SQLException {
-        User user = new User();
-        user.setId(rs.getLong("id"));
-        user.setName(rs.getString("full_name"));
-        user.setEmail(rs.getString("email"));
-        user.setPhone(rs.getString("phone"));
-        user.setPassword(rs.getString("password"));
-
-        // Загружаем адреса
-        List<Address> addresses = getUserAddresses(user.getId(), rs.getStatement().getConnection());
-        user.setAddresses(addresses);
-
         return user;
-    }
-
-    private List<Address> getUserAddresses(Long userId, Connection conn) throws SQLException {
-        List<Address> addresses = new ArrayList<>();
-        String sql = "SELECT * FROM addresses WHERE user_id = ?";
-
-        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setLong(1, userId);
-            ResultSet rs = pstmt.executeQuery();
-
-            while (rs.next()) {
-                Address address = new Address();
-                address.setId(rs.getLong("id"));
-                address.setLabel(rs.getString("label"));
-                address.setAddress(rs.getString("address"));
-                address.setApartment(rs.getString("apartment"));
-                addresses.add(address);
-            }
-        }
-        return addresses;
     }
 
     private boolean isValidEmail(String email) {
@@ -308,5 +141,17 @@ public class AuthServiceImpl implements AuthService {
 
     private boolean isValidPhone(String phone) {
         return PHONE_PATTERN.matcher(phone).matches();
+    }
+
+    private ClientAuthRepository requireRepository() {
+        return authRepository;
+    }
+
+    private User requireUserById(Long userId) {
+        User user = requireRepository().findById(userId);
+        if (user == null) {
+            throw new IllegalArgumentException("Пользователь не найден");
+        }
+        return user;
     }
 }

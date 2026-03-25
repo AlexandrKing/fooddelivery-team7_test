@@ -2,8 +2,10 @@ package com.team7.service.client;
 
 import com.team7.model.client.Order;
 import com.team7.model.client.OrderStatus;
+import org.springframework.stereotype.Service;
 import java.util.List;
 
+@Service
 public class OrderTrackingServiceImpl implements OrderTrackingService {
     private final OrderService orderService;
 

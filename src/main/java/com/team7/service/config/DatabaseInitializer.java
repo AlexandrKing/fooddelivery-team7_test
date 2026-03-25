@@ -8,6 +8,11 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
 
+/**
+ * @deprecated Legacy DB bootstrapper. Replaced by Flyway migrations in {@code db/migration}.
+ */
+// TODO(legacy-cleanup): remove in Wave 3 after Flyway-only bootstrap is fully enforced.
+@Deprecated(forRemoval = false, since = "1.1")
 public class DatabaseInitializer {
 
   public static void initialize() {

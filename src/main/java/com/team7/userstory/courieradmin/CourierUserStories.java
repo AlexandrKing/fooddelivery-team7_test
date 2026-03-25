@@ -1,5 +1,6 @@
 package com.team7.userstory.courieradmin;
 
+import com.team7.config.LegacyRuntimeGuard;
 import com.team7.service.courieradmin.CourierService;
 import com.team7.service.courieradmin.OrderService;
 import com.team7.service.courieradmin.CourierOrderService;
@@ -9,6 +10,11 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Scanner;
 
+/**
+ * @deprecated Legacy console user stories. Prefer REST API controllers.
+ */
+// TODO(legacy-cleanup): remove in Wave 3 after runtime fully switches to REST only.
+@Deprecated(forRemoval = false, since = "1.1")
 public class CourierUserStories {
     private static Courier currentCourier = null;
     private static CourierService courierService = new CourierService();
@@ -17,6 +23,7 @@ public class CourierUserStories {
     private static Scanner scanner = new Scanner(System.in);
 
     public static void main(String[] args) {
+        LegacyRuntimeGuard.requireLegacyConsoleEnabled();
         boolean running = true;
 
         System.out.println("=".repeat(50));
