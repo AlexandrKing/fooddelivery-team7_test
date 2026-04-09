@@ -34,7 +34,11 @@ public class SecurityConfig {
                 "/swagger-ui/**",
                 "/swagger-ui.html"
             ).permitAll()
-            .requestMatchers("/api/**").hasAnyRole("USER", "ADMIN")
+            .requestMatchers("/api/admin/**").hasRole("ADMIN")
+            .requestMatchers("/api/courier/**").hasRole("COURIER")
+            .requestMatchers("/api/restaurant/**").hasRole("RESTAURANT")
+            .requestMatchers("/api/client/**").hasRole("USER")
+            .requestMatchers("/api/**").hasAnyRole("USER", "ADMIN", "COURIER", "RESTAURANT")
             .anyRequest().permitAll()
         )
         .httpBasic(Customizer.withDefaults())

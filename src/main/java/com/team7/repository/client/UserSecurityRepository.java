@@ -1,25 +1,50 @@
 package com.team7.repository.client;
 
-import com.team7.persistence.UserJpaRepository;
+import com.team7.persistence.AppAccountJpaRepository;
+import com.team7.persistence.entity.AppAccountEntity;
 import org.springframework.stereotype.Repository;
 
 @Repository
 public class UserSecurityRepository {
-  private final UserJpaRepository userJpaRepository;
+  private final AppAccountJpaRepository appAccountJpaRepository;
 
-  public UserSecurityRepository(UserJpaRepository userJpaRepository) {
-    this.userJpaRepository = userJpaRepository;
+  public UserSecurityRepository(AppAccountJpaRepository appAccountJpaRepository) {
+    this.appAccountJpaRepository = appAccountJpaRepository;
   }
 
   /**
-   * Загрузка учётных данных для Spring Security (тот же источник, что и {@link com.team7.persistence.entity.UserEntity}).
+   * Загрузка учетных данных для Spring Security.
    */
   public SecurityUserRecord findByEmail(String email) {
-    return userJpaRepository.findByEmail(email)
-        .map(u -> new SecurityUserRecord(u.getId(), u.getEmail(), u.getPassword()))
+    return appAccountJpaRepository.findByEmail(email)
+        .map(this::toRecord)
         .orElse(null);
   }
 
-  public record SecurityUserRecord(Long id, String email, String passwordHash) {
+  private SecurityUserRecord toRecord(AppAccountEntity account) {
+    return new SecurityUserRecord(
+        account.getId(),
+        account.getEmail(),
+        account.getPasswordHash(),
+        account.getRole().name(),
+        account.getLinkedUserId(),
+        account.getLinkedRestaurantId(),
+        account.getLinkedCourierId(),
+        account.getLinkedAdminId(),
+        account.getIsActive() != null ? account.getIsActive() : Boolean.TRUE
+    );
+  }
+
+  public record SecurityUserRecord(
+      Long id,
+      String email,
+      String passwordHash,
+      String role,
+      Long linkedUserId,
+      Long linkedRestaurantId,
+      Long linkedCourierId,
+      Long linkedAdminId,
+      boolean active
+  ) {
   }
 }
