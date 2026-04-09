@@ -1,64 +1,46 @@
 package com.team7.repository.client;
 
-import com.team7.model.client.*;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.dao.EmptyResultDataAccessException;
-import org.springframework.jdbc.core.RowMapper;
-import org.springframework.jdbc.datasource.DataSourceTransactionManager;
+import com.team7.model.client.CartItem;
+import com.team7.model.client.DeliveryType;
+import com.team7.model.client.Order;
+import com.team7.model.client.OrderItem;
+import com.team7.model.client.OrderStatus;
+import com.team7.model.client.PaymentMethod;
+import com.team7.persistence.OrderItemJpaRepository;
+import com.team7.persistence.OrderJpaRepository;
+import com.team7.persistence.OrderStatusHistoryJpaRepository;
+import com.team7.persistence.entity.OrderEntity;
+import com.team7.persistence.entity.OrderItemEntity;
+import com.team7.persistence.entity.OrderStatusHistoryEntity;
+import org.springframework.stereotype.Repository;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
-import org.springframework.stereotype.Repository;
 
-import javax.sql.DataSource;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.sql.Timestamp;
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Map;
+import java.util.ArrayList;
 import java.util.Collections;
-import org.springframework.jdbc.core.BatchPreparedStatementSetter;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNull;
 
 @Repository
 public class OrderRepository {
-  private final JdbcTemplate jdbcTemplate;
   private final TransactionTemplate txTemplate;
+  private final OrderJpaRepository orderJpaRepository;
+  private final OrderItemJpaRepository orderItemJpaRepository;
+  private final OrderStatusHistoryJpaRepository orderStatusHistoryJpaRepository;
 
-  private static final RowMapper<Order> ORDER_ROW_MAPPER = (rs, rowNum) -> {
-    Order order = new Order();
-    order.setId(rs.getLong("id"));
-    order.setUserId(rs.getLong("user_id"));
-    order.setRestaurantId(rs.getLong("restaurant_id"));
-    order.setStatus(OrderStatus.valueOf(rs.getString("status")));
-    order.setDeliveryAddress(rs.getString("delivery_address"));
-    order.setDeliveryType(DeliveryType.valueOf(rs.getString("delivery_type")));
-    order.setPaymentMethod(PaymentMethod.valueOf(rs.getString("payment_method")));
-    Timestamp preferredTs = rs.getTimestamp("delivery_time");
-    order.setPreferredDeliveryTime(preferredTs != null ? preferredTs.toLocalDateTime() : null);
-    Timestamp createdTs = rs.getTimestamp("created_at");
-    order.setCreatedAt(createdTs != null ? createdTs.toLocalDateTime() : null);
-    order.setTotalAmount(rs.getDouble("total_amount"));
-    return order;
-  };
-
-  public OrderRepository(JdbcTemplate jdbcTemplate, PlatformTransactionManager transactionManager) {
-    this.jdbcTemplate = requireNonNull(jdbcTemplate);
+  public OrderRepository(
+      PlatformTransactionManager transactionManager,
+      OrderJpaRepository orderJpaRepository,
+      OrderItemJpaRepository orderItemJpaRepository,
+      OrderStatusHistoryJpaRepository orderStatusHistoryJpaRepository
+  ) {
     this.txTemplate = new TransactionTemplate(requireNonNull(transactionManager));
-  }
-
-  /**
-   * No-arg fallback constructor for legacy {@code userstory/*} code.
-   */
-  // TODO(legacy-cleanup): remove this fallback constructor in Wave 2.
-  @Deprecated(forRemoval = false, since = "1.1")
-  public OrderRepository() {
-    DataSource ds = DatabaseConfigDataSource.createFallbackDataSource();
-    this.jdbcTemplate = new JdbcTemplate(ds);
-    PlatformTransactionManager txManager = new DataSourceTransactionManager(ds);
-    this.txTemplate = new TransactionTemplate(txManager);
+    this.orderJpaRepository = requireNonNull(orderJpaRepository);
+    this.orderItemJpaRepository = requireNonNull(orderItemJpaRepository);
+    this.orderStatusHistoryJpaRepository = requireNonNull(orderStatusHistoryJpaRepository);
   }
 
   public OrderCreationResult createOrder(
@@ -71,107 +53,127 @@ public class OrderRepository {
       Double totalAmount,
       List<CartItem> items
   ) {
-    return txTemplate.execute(status -> {
-      String orderSql = "INSERT INTO orders (user_id, restaurant_id, delivery_address, " +
-          "delivery_type, delivery_time, payment_method, status, total_amount) " +
-          "VALUES (?, ?, ?, ?, ?, ?, ?, ?) " +
-          "RETURNING id, created_at";
-
-      Map<String, Object> orderRow = jdbcTemplate.queryForMap(
-          orderSql,
-          userId,
-          restaurantId,
-          deliveryAddress,
-          deliveryType.toString(),
-          Timestamp.valueOf(deliveryTime),
-          paymentMethod.toString(),
-          OrderStatus.PENDING.toString(),
-          totalAmount
-      );
-
-      long orderId = ((Number) orderRow.get("id")).longValue();
-      Timestamp createdAtTs = (Timestamp) orderRow.get("created_at");
-      LocalDateTime createdAt = createdAtTs != null ? createdAtTs.toLocalDateTime() : null;
-
-      // Insert order items
-      String itemSql = "INSERT INTO order_items (order_id, dish_id, name, price, quantity) " +
-          "VALUES (?, ?, ?, ?, ?)";
-
-      jdbcTemplate.batchUpdate(itemSql, new BatchPreparedStatementSetter() {
-        @Override
-        public void setValues(PreparedStatement ps, int i) throws SQLException {
-          CartItem ci = items.get(i);
-          ps.setLong(1, orderId);
-          ps.setLong(2, ci.getMenuItemId()); // dish_id
-          ps.setString(3, ci.getName());
-          ps.setDouble(4, ci.getPrice());
-          ps.setInt(5, ci.getQuantity());
-        }
-
-        @Override
-        public int getBatchSize() {
-          return items.size();
-        }
-      });
-
-      // Add history
-      String historySql = "INSERT INTO order_status_history (order_id, status) VALUES (?, ?)";
-      jdbcTemplate.update(historySql, orderId, OrderStatus.PENDING.toString());
-
-      return new OrderCreationResult(orderId, createdAt);
-    });
+    return txTemplate.execute(status -> createOrderJpa(
+        userId, restaurantId, deliveryAddress, deliveryType, deliveryTime, paymentMethod, totalAmount, items
+    ));
   }
 
   public Order getOrder(Long orderId) {
-    try {
-      Order order = jdbcTemplate.queryForObject(
-          "SELECT * FROM orders WHERE id = ?",
-          ORDER_ROW_MAPPER,
-          orderId
-      );
-      order.setItems(getOrderItems(orderId));
-      return order;
-    } catch (EmptyResultDataAccessException e) {
-      throw new IllegalArgumentException("Заказ не найден");
-    }
+    return getOrderJpa(orderId);
   }
 
   public List<Order> getUserOrders(Long userId) {
-    return jdbcTemplate.query(
-        "SELECT * FROM orders WHERE user_id = ? ORDER BY created_at DESC",
-        ORDER_ROW_MAPPER,
-        userId
-    );
+    return orderJpaRepository.findByUserIdOrderByCreatedAtDesc(userId).stream()
+        .map(this::toClientOrderWithoutItems)
+        .collect(Collectors.toList());
   }
 
   public Order cancelOrder(Long orderId) {
-    return txTemplate.execute(status -> {
-      String updateSql = "UPDATE orders SET status = ? WHERE id = ? AND status = ?";
-      int rows = jdbcTemplate.update(updateSql, OrderStatus.CANCELLED.toString(), orderId, OrderStatus.PENDING.toString());
-      if (rows > 0) {
-        String historySql = "INSERT INTO order_status_history (order_id, status) VALUES (?, ?)";
-        jdbcTemplate.update(historySql, orderId, OrderStatus.CANCELLED.toString());
-        return getOrder(orderId);
-      }
-      throw new IllegalArgumentException("Нельзя отменить заказ в текущем статусе");
-    });
+    return txTemplate.execute(status -> cancelOrderJpa(orderId));
   }
 
-  private List<OrderItem> getOrderItems(Long orderId) {
-    List<OrderItem> items = jdbcTemplate.query(
-        "SELECT * FROM order_items WHERE order_id = ?",
-        (rs, rowNum) -> {
-          OrderItem item = new OrderItem();
-          item.setId(rs.getLong("id"));
-          item.setMenuItemId(rs.getLong("dish_id"));
-          item.setName(rs.getString("name"));
-          item.setPrice(rs.getDouble("price"));
-          item.setQuantity(rs.getInt("quantity"));
-          return item;
-        },
-        orderId
-    );
-    return items == null ? Collections.emptyList() : items;
+  // --- JPA ---
+
+  private OrderCreationResult createOrderJpa(
+      Long userId,
+      Long restaurantId,
+      String deliveryAddress,
+      DeliveryType deliveryType,
+      LocalDateTime deliveryTime,
+      PaymentMethod paymentMethod,
+      Double totalAmount,
+      List<CartItem> items
+  ) {
+    LocalDateTime createdAt = LocalDateTime.now();
+    OrderEntity oe = new OrderEntity();
+    oe.setUserId(userId);
+    oe.setRestaurantId(restaurantId);
+    oe.setDeliveryAddress(deliveryAddress);
+    oe.setDeliveryType(deliveryType.toString());
+    oe.setDeliveryTime(deliveryTime);
+    oe.setPaymentMethod(paymentMethod.toString());
+    oe.setStatus(OrderStatus.PENDING.toString());
+    oe.setTotalAmount(totalAmount);
+    oe.setCreatedAt(createdAt);
+    OrderEntity saved = orderJpaRepository.save(oe);
+    Long orderId = saved.getId();
+
+    List<OrderItemEntity> lineEntities = new ArrayList<>();
+    for (CartItem ci : items) {
+      OrderItemEntity oi = new OrderItemEntity();
+      oi.setOrderId(orderId);
+      oi.setDishId(ci.getMenuItemId());
+      oi.setName(ci.getName());
+      oi.setPrice(ci.getPrice());
+      oi.setQuantity(ci.getQuantity());
+      lineEntities.add(oi);
+    }
+    orderItemJpaRepository.saveAll(lineEntities);
+
+    OrderStatusHistoryEntity hist = new OrderStatusHistoryEntity();
+    hist.setOrderId(orderId);
+    hist.setStatus(OrderStatus.PENDING.toString());
+    hist.setCreatedAt(LocalDateTime.now());
+    orderStatusHistoryJpaRepository.save(hist);
+
+    return new OrderCreationResult(orderId, saved.getCreatedAt());
+  }
+
+  private Order getOrderJpa(Long orderId) {
+    OrderEntity e = orderJpaRepository.findById(orderId)
+        .orElseThrow(() -> new IllegalArgumentException("Заказ не найден"));
+    Order order = toClientOrderWithoutItems(e);
+    order.setItems(toClientOrderItems(orderItemJpaRepository.findByOrderIdOrderByIdAsc(orderId)));
+    return order;
+  }
+
+  private Order cancelOrderJpa(Long orderId) {
+    OrderEntity order = orderJpaRepository.findById(orderId)
+        .orElseThrow(() -> new IllegalArgumentException("Нельзя отменить заказ в текущем статусе"));
+    if (!OrderStatus.PENDING.toString().equals(order.getStatus())) {
+      throw new IllegalArgumentException("Нельзя отменить заказ в текущем статусе");
+    }
+    order.setStatus(OrderStatus.CANCELLED.toString());
+    orderJpaRepository.save(order);
+
+    OrderStatusHistoryEntity hist = new OrderStatusHistoryEntity();
+    hist.setOrderId(orderId);
+    hist.setStatus(OrderStatus.CANCELLED.toString());
+    hist.setCreatedAt(LocalDateTime.now());
+    orderStatusHistoryJpaRepository.save(hist);
+
+    return getOrderJpa(orderId);
+  }
+
+  private Order toClientOrderWithoutItems(OrderEntity e) {
+    Order o = new Order();
+    o.setId(e.getId());
+    o.setUserId(e.getUserId());
+    o.setRestaurantId(e.getRestaurantId());
+    o.setStatus(OrderStatus.valueOf(e.getStatus()));
+    o.setDeliveryAddress(e.getDeliveryAddress());
+    o.setDeliveryType(DeliveryType.valueOf(e.getDeliveryType()));
+    o.setPaymentMethod(PaymentMethod.valueOf(e.getPaymentMethod()));
+    o.setPreferredDeliveryTime(e.getDeliveryTime());
+    o.setTotalAmount(e.getTotalAmount());
+    o.setCreatedAt(e.getCreatedAt());
+    o.setItems(null);
+    return o;
+  }
+
+  private List<OrderItem> toClientOrderItems(List<OrderItemEntity> lines) {
+    if (lines == null || lines.isEmpty()) {
+      return Collections.emptyList();
+    }
+    return lines.stream().map(line -> {
+      OrderItem item = new OrderItem();
+      item.setId(line.getId());
+      item.setMenuItemId(line.getDishId());
+      item.setName(line.getName());
+      item.setPrice(line.getPrice());
+      item.setQuantity(line.getQuantity());
+      return item;
+    }).collect(Collectors.toList());
   }
 
   public static final class OrderCreationResult {
@@ -192,4 +194,3 @@ public class OrderRepository {
     }
   }
 }
-

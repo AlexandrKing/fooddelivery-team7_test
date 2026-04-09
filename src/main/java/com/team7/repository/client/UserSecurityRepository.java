@@ -1,42 +1,25 @@
 package com.team7.repository.client;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.jdbc.core.JdbcTemplate;
+import com.team7.persistence.UserJpaRepository;
 import org.springframework.stereotype.Repository;
-
-import java.util.List;
 
 @Repository
 public class UserSecurityRepository {
-  private final JdbcTemplate jdbcTemplate;
+  private final UserJpaRepository userJpaRepository;
 
-  @Autowired
-  public UserSecurityRepository(JdbcTemplate jdbcTemplate) {
-    this.jdbcTemplate = jdbcTemplate;
+  public UserSecurityRepository(UserJpaRepository userJpaRepository) {
+    this.userJpaRepository = userJpaRepository;
   }
 
-  // TODO(legacy-cleanup): remove this fallback constructor in Wave 2.
-  @Deprecated(forRemoval = false, since = "1.1")
-  public UserSecurityRepository() {
-    throw new UnsupportedOperationException(
-        "Fallback constructor is disabled. Use Spring DI constructor with JdbcTemplate."
-    );
-  }
-
+  /**
+   * Загрузка учётных данных для Spring Security (тот же источник, что и {@link com.team7.persistence.entity.UserEntity}).
+   */
   public SecurityUserRecord findByEmail(String email) {
-    List<SecurityUserRecord> users = jdbcTemplate.query(
-        "SELECT id, email, password FROM users WHERE email = ?",
-        (rs, rowNum) -> new SecurityUserRecord(
-            rs.getLong("id"),
-            rs.getString("email"),
-            rs.getString("password")
-        ),
-        email
-    );
-    return users.isEmpty() ? null : users.get(0);
+    return userJpaRepository.findByEmail(email)
+        .map(u -> new SecurityUserRecord(u.getId(), u.getEmail(), u.getPassword()))
+        .orElse(null);
   }
 
   public record SecurityUserRecord(Long id, String email, String passwordHash) {
   }
 }
-

@@ -3,19 +3,11 @@ package com.team7.service.client;
 import com.team7.model.client.Cart;
 import com.team7.repository.client.CartRepository;
 import org.springframework.stereotype.Service;
-import org.springframework.beans.factory.annotation.Autowired;
 
 @Service
 public class CartServiceImpl implements CartService {
     private final CartRepository cartRepository;
 
-    // TODO(legacy-cleanup): remove this fallback constructor in Wave 2.
-    @Deprecated(forRemoval = false, since = "1.1")
-    public CartServiceImpl() {
-        this.cartRepository = new CartRepository();
-    }
-
-    @Autowired
     public CartServiceImpl(CartRepository cartRepository) {
         this.cartRepository = cartRepository;
     }

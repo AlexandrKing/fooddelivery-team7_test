@@ -4,7 +4,6 @@ import com.team7.model.client.User;
 import com.team7.model.client.Address;
 import com.team7.repository.client.ClientAuthRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -20,14 +19,6 @@ public class AuthServiceImpl implements AuthService {
     private final ClientAuthRepository authRepository;
     private final PasswordEncoder passwordEncoder;
 
-    // TODO(legacy-cleanup): remove this constructor after userstory/* is deleted in Wave 3.
-    @Deprecated(forRemoval = false, since = "1.1")
-    public AuthServiceImpl() {
-        this.authRepository = new ClientAuthRepository();
-        this.passwordEncoder = new com.team7.security.LegacyAwarePasswordEncoder();
-    }
-
-    @Autowired
     public AuthServiceImpl(ClientAuthRepository authRepository, PasswordEncoder passwordEncoder) {
         this.authRepository = authRepository;
         this.passwordEncoder = passwordEncoder;

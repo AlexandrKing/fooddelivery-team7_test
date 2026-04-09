@@ -9,8 +9,7 @@ import java.sql.SQLException;
 /**
  * Connection provider that uses Spring-managed {@link DataSource}.
  * <p>
- * Old code can still use {@link DatabaseConfig}. New/bean-based code can switch
- * to this provider without deleting the legacy class.
+ * Kept for compatibility while legacy static DB access is being phased out.
  */
 @Component
 public class DbConnectionProvider {

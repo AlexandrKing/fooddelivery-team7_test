@@ -2,180 +2,114 @@ package com.team7.repository.client;
 
 import com.team7.model.client.Address;
 import com.team7.model.client.User;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.support.GeneratedKeyHolder;
-import org.springframework.jdbc.support.KeyHolder;
+import com.team7.persistence.AddressEntityMappings;
+import com.team7.persistence.AddressJpaRepository;
+import com.team7.persistence.UserEntityMappings;
+import com.team7.persistence.UserJpaRepository;
+import com.team7.persistence.entity.AddressEntity;
+import com.team7.persistence.entity.UserEntity;
 import org.springframework.stereotype.Repository;
 
-import javax.sql.DataSource;
-import java.sql.PreparedStatement;
-import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Repository
 public class ClientAuthRepository {
-  private final JdbcTemplate jdbcTemplate;
+  private final AddressJpaRepository addressJpaRepository;
+  private final UserJpaRepository userJpaRepository;
 
-  public ClientAuthRepository(JdbcTemplate jdbcTemplate) {
-    this.jdbcTemplate = jdbcTemplate;
-  }
-
-  @Deprecated(forRemoval = false, since = "1.1")
-  public ClientAuthRepository() {
-    DataSource ds = DatabaseConfigDataSource.createFallbackDataSource();
-    this.jdbcTemplate = new JdbcTemplate(ds);
+  public ClientAuthRepository(
+      AddressJpaRepository addressJpaRepository,
+      UserJpaRepository userJpaRepository
+  ) {
+    this.addressJpaRepository = addressJpaRepository;
+    this.userJpaRepository = userJpaRepository;
   }
 
   public User createUser(String name, String email, String phone, String encodedPassword) {
-    String sql = "INSERT INTO users (full_name, email, password, phone) VALUES (?, ?, ?, ?)";
-    KeyHolder keyHolder = new GeneratedKeyHolder();
-
-    jdbcTemplate.update(connection -> {
-      PreparedStatement ps = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
-      ps.setString(1, name);
-      ps.setString(2, email);
-      ps.setString(3, encodedPassword);
-      ps.setString(4, phone);
-      return ps;
-    }, keyHolder);
-
-    Number key = keyHolder.getKey();
-    if (key == null) {
-      throw new RuntimeException("Не удалось зарегистрировать пользователя");
-    }
-
-    User user = new User();
-    user.setId(key.longValue());
-    user.setName(name);
-    user.setEmail(email);
-    user.setPhone(phone);
-    user.setPassword(encodedPassword);
+    UserEntity entity = new UserEntity();
+    entity.setFullName(name);
+    entity.setEmail(email);
+    entity.setPassword(encodedPassword);
+    entity.setPhone(phone);
+    entity.setIsActive(true);
+    UserEntity saved = userJpaRepository.save(entity);
+    User user = UserEntityMappings.toClientUser(saved);
     user.setAddresses(new ArrayList<>());
     return user;
   }
 
   public User findByEmail(String email) {
-    List<User> users = jdbcTemplate.query(
-        "SELECT id, full_name, email, phone, password FROM users WHERE email = ?",
-        (rs, rowNum) -> {
-          User user = new User();
-          user.setId(rs.getLong("id"));
-          user.setName(rs.getString("full_name"));
-          user.setEmail(rs.getString("email"));
-          user.setPhone(rs.getString("phone"));
-          user.setPassword(rs.getString("password"));
-          return user;
-        },
-        email
-    );
-    if (users.isEmpty()) {
-      return null;
-    }
-    User user = users.get(0);
-    user.setAddresses(getUserAddresses(user.getId()));
-    return user;
+    return userJpaRepository.findByEmail(email)
+        .map(e -> {
+          User u = UserEntityMappings.toClientUser(e);
+          u.setAddresses(getUserAddresses(u.getId()));
+          return u;
+        })
+        .orElse(null);
   }
 
   public User findById(Long userId) {
-    List<User> users = jdbcTemplate.query(
-        "SELECT id, full_name, email, phone, password FROM users WHERE id = ?",
-        (rs, rowNum) -> {
-          User user = new User();
-          user.setId(rs.getLong("id"));
-          user.setName(rs.getString("full_name"));
-          user.setEmail(rs.getString("email"));
-          user.setPhone(rs.getString("phone"));
-          user.setPassword(rs.getString("password"));
-          return user;
-        },
-        userId
-    );
-    if (users.isEmpty()) {
-      return null;
-    }
-    User user = users.get(0);
-    user.setAddresses(getUserAddresses(user.getId()));
-    return user;
+    return userJpaRepository.findById(userId)
+        .map(e -> {
+          User u = UserEntityMappings.toClientUser(e);
+          u.setAddresses(getUserAddresses(u.getId()));
+          return u;
+        })
+        .orElse(null);
   }
 
   public int countByEmail(String email) {
-    Integer count = jdbcTemplate.queryForObject(
-        "SELECT COUNT(*) FROM users WHERE email = ?",
-        Integer.class,
-        email
-    );
-    return count == null ? 0 : count;
+    return (int) userJpaRepository.countByEmail(email);
   }
 
   public int countByPhone(String phone) {
-    Integer count = jdbcTemplate.queryForObject(
-        "SELECT COUNT(*) FROM users WHERE phone = ?",
-        Integer.class,
-        phone
-    );
-    return count == null ? 0 : count;
+    return (int) userJpaRepository.countByPhone(phone);
   }
 
   public int updateProfile(User user) {
-    return jdbcTemplate.update(
-        "UPDATE users SET full_name = ?, phone = ?, email = ? WHERE id = ?",
-        user.getName(),
-        user.getPhone(),
-        user.getEmail(),
-        user.getId()
-    );
+    return userJpaRepository.findById(user.getId())
+        .map(e -> {
+          e.setFullName(user.getName());
+          e.setPhone(user.getPhone());
+          e.setEmail(user.getEmail());
+          userJpaRepository.save(e);
+          return 1;
+        })
+        .orElse(0);
   }
 
   public Address addAddress(Long userId, Address address) {
-    String sql = "INSERT INTO addresses (user_id, label, address, apartment) VALUES (?, ?, ?, ?)";
-    KeyHolder keyHolder = new GeneratedKeyHolder();
-    jdbcTemplate.update(connection -> {
-      PreparedStatement ps = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
-      ps.setLong(1, userId);
-      ps.setString(2, address.getLabel());
-      ps.setString(3, address.getAddress());
-      ps.setString(4, address.getApartment());
-      return ps;
-    }, keyHolder);
-
-    Number key = keyHolder.getKey();
-    if (key != null) {
-      address.setId(key.longValue());
-    }
+    AddressEntity entity = new AddressEntity();
+    entity.setUserId(userId);
+    entity.setLabel(address.getLabel());
+    entity.setAddress(address.getAddress());
+    entity.setApartment(address.getApartment());
+    AddressEntity saved = addressJpaRepository.save(entity);
+    address.setId(saved.getId());
     return address;
   }
 
   public String findPasswordByUserId(Long userId) {
-    List<String> values = jdbcTemplate.query(
-        "SELECT password FROM users WHERE id = ?",
-        (rs, rowNum) -> rs.getString("password"),
-        userId
-    );
-    return values.isEmpty() ? null : values.get(0);
+    return userJpaRepository.findById(userId)
+        .map(UserEntity::getPassword)
+        .orElse(null);
   }
 
   public int updatePassword(Long userId, String encodedPassword) {
-    return jdbcTemplate.update(
-        "UPDATE users SET password = ? WHERE id = ?",
-        encodedPassword,
-        userId
-    );
+    return userJpaRepository.findById(userId)
+        .map(e -> {
+          e.setPassword(encodedPassword);
+          userJpaRepository.save(e);
+          return 1;
+        })
+        .orElse(0);
   }
 
   private List<Address> getUserAddresses(Long userId) {
-    return jdbcTemplate.query(
-        "SELECT id, label, address, apartment FROM addresses WHERE user_id = ?",
-        (rs, rowNum) -> {
-          Address address = new Address();
-          address.setId(rs.getLong("id"));
-          address.setLabel(rs.getString("label"));
-          address.setAddress(rs.getString("address"));
-          address.setApartment(rs.getString("apartment"));
-          return address;
-        },
-        userId
-    );
+    return addressJpaRepository.findByUserIdOrderByIdAsc(userId).stream()
+        .map(AddressEntityMappings::toDto)
+        .collect(Collectors.toList());
   }
 }
-

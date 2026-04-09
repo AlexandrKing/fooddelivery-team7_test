@@ -1,6 +1,5 @@
 package com.team7.model.restaurant;
 
-import com.team7.service.restaurant.MenuService;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
@@ -41,12 +40,6 @@ public class Restaurant {
   public void setMenuCategories(List<MenuCategory> menuCategories) {
     this.menuCategories = menuCategories;
   }
-  public void loadMenuCategories() {
-    MenuService menuService = new MenuService();
-    List<MenuCategory> categories = menuService.getMenuCategoriesByRestaurantId(this.id);
-    this.menuCategories = categories;
-  }
-
   public Restaurant(Long id, String name, String email, String password, String phone,
                     String address, String cuisineType) {
     this.id = id;

@@ -2,7 +2,6 @@ package com.team7.service.client;
 
 import com.team7.model.client.Menu;
 import com.team7.repository.client.ClientMenuRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -11,13 +10,6 @@ import java.util.List;
 public class MenuServiceImpl implements MenuService {
   private final ClientMenuRepository menuRepository;
 
-  // TODO(legacy-cleanup): remove this constructor after userstory/* is deleted in Wave 3.
-  @Deprecated(forRemoval = false, since = "1.1")
-  public MenuServiceImpl() {
-    this.menuRepository = new ClientMenuRepository();
-  }
-
-  @Autowired
   public MenuServiceImpl(ClientMenuRepository menuRepository) {
     this.menuRepository = menuRepository;
   }
