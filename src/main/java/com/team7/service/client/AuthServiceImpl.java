@@ -3,6 +3,7 @@ package com.team7.service.client;
 import com.team7.model.client.User;
 import com.team7.model.client.Address;
 import com.team7.repository.client.ClientAuthRepository;
+import com.team7.service.telegramnotificationservice.TelegramNotificationService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -18,10 +19,19 @@ public class AuthServiceImpl implements AuthService {
 
     private final ClientAuthRepository authRepository;
     private final PasswordEncoder passwordEncoder;
+    private final TelegramNotificationService telegramNotificationService;
 
-    public AuthServiceImpl(ClientAuthRepository authRepository, PasswordEncoder passwordEncoder) {
+    public AuthServiceImpl(ClientAuthRepository authRepository,
+            PasswordEncoder passwordEncoder,
+            TelegramNotificationService telegramNotificationService) {
         this.authRepository = authRepository;
         this.passwordEncoder = passwordEncoder;
+        this.telegramNotificationService = telegramNotificationService;
+    }
+
+    @Override
+    public String initiateAuthCodeSending(String chatId, String userId) {
+        return telegramNotificationService.sendAuthCode(chatId, userId);
     }
 
     @Override
@@ -29,23 +39,6 @@ public class AuthServiceImpl implements AuthService {
         if (!password.equals(confirmPassword)) {
             throw new IllegalArgumentException("Пароли не совпадают");
         }
-
-        if (!isValidEmail(email)) {
-            throw new IllegalArgumentException("Неверный формат email");
-        }
-
-        if (!isValidPhone(phone)) {
-            throw new IllegalArgumentException("Телефон должен быть в формате +79XXXXXXXXX");
-        }
-
-        if (!isEmailAvailable(email)) {
-            throw new IllegalArgumentException("Email уже используется");
-        }
-
-        if (!isPhoneAvailable(phone)) {
-            throw new IllegalArgumentException("Номер телефона уже используется");
-        }
-
         ClientAuthRepository repository = requireRepository();
         User created = repository.createUser(name, email, phone, passwordEncoder.encode(password));
         created.setPassword(password);
