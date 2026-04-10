@@ -54,7 +54,8 @@ public final class OrderDtos {
       PaymentMethod paymentMethod,
       LocalDateTime preferredDeliveryTime,
       Double totalAmount,
-      LocalDateTime createdAt
+      LocalDateTime createdAt,
+      Long courierId
   ) {
   }
 }

@@ -2,10 +2,12 @@ package com.team7.model.client;
 
 public enum OrderStatus {
     PENDING,           // Ожидание подтверждения
+    ASSIGNED,          // Назначен курьеру (courier_assigned_orders / кабинет курьера)
     ACCEPTED,          // Подтвержден
     PREPARING,         // Готовится
     COOKING,           // В процессе приготовления (синоним для PREPARING)
     READY,             // Готов к выдаче
+    PICKED_UP,         // Курьер забрал заказ
     IN_DELIVERY,       // В доставке
     DELIVERING,        // В процессе доставки (синоним для IN_DELIVERY)
     DELIVERED,         // Доставлен
