@@ -14,4 +14,5 @@ public interface AuthService {
     User updateProfile(User updatedUser);
     User addAddress(Long userId, Address address);
     User changePassword(Long userId, String oldPassword, String newPassword);
+    String initiateAuthCodeSending(String chatId, String userId);
 }
