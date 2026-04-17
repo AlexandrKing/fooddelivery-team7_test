@@ -41,7 +41,13 @@ public final class AuthDtos {
       String name,
       String email,
       String phone,
-      List<Address> addresses
+      List<Address> addresses,
+      String role,
+      Long accountId,
+      Long linkedUserId,
+      Long linkedRestaurantId,
+      Long linkedCourierId,
+      Long linkedAdminId
   ) {
   }
 }

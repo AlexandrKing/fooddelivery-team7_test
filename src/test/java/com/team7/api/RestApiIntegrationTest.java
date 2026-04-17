@@ -1,16 +1,29 @@
 package com.team7.api;
 
 import tools.jackson.databind.ObjectMapper;
+import com.team7.persistence.AppAccountJpaRepository;
+import com.team7.persistence.AdminUserJpaRepository;
+import com.team7.persistence.CourierUserJpaRepository;
+import com.team7.persistence.UserJpaRepository;
+import com.team7.persistence.entity.AppAccountEntity;
+import com.team7.persistence.entity.AppRole;
+import com.team7.persistence.entity.UserEntity;
 import com.team7.model.client.*;
 import com.team7.service.client.AuthService;
 import com.team7.service.client.CartService;
 import com.team7.service.client.OrderService;
 import com.team7.service.client.RestaurantService;
+import com.team7.service.admin.AdminService;
+import com.team7.service.courier.CourierService;
+import com.team7.service.restaurant.RestaurantManagementService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -50,6 +63,30 @@ class RestApiIntegrationTest {
   @MockitoBean
   private OrderService orderService;
 
+  @MockitoBean
+  private AuthenticationManager authenticationManager;
+
+  @MockitoBean
+  private AppAccountJpaRepository appAccountJpaRepository;
+
+  @MockitoBean
+  private UserJpaRepository userJpaRepository;
+
+  @MockitoBean
+  private AdminUserJpaRepository adminUserJpaRepository;
+
+  @MockitoBean
+  private CourierUserJpaRepository courierUserJpaRepository;
+
+  @MockitoBean
+  private AdminService adminService;
+
+  @MockitoBean
+  private CourierService courierService;
+
+  @MockitoBean
+  private RestaurantManagementService restaurantManagementService;
+
   @Test
   void authRegisterReturnsUnifiedSuccessResponse() throws Exception {
     User user = new User();
@@ -61,6 +98,14 @@ class RestApiIntegrationTest {
 
     given(authService.register(anyString(), anyString(), anyString(), anyString(), anyString()))
         .willReturn(user);
+    AppAccountEntity account = account("alex@mail.com", AppRole.USER, 1L, null, null, null);
+    UserEntity userEntity = new UserEntity();
+    userEntity.setId(1L);
+    userEntity.setFullName("Alex");
+    userEntity.setEmail("alex@mail.com");
+    userEntity.setPhone("+79991234567");
+    given(appAccountJpaRepository.findByEmail("alex@mail.com")).willReturn(java.util.Optional.of(account));
+    given(userJpaRepository.findById(1L)).willReturn(java.util.Optional.of(userEntity));
 
     Map<String, Object> req = Map.of(
         "name", "Alex",
@@ -201,6 +246,132 @@ class RestApiIntegrationTest {
         .andExpect(jsonPath("$.success").value(true))
         .andExpect(jsonPath("$.data.id").value(99))
         .andExpect(jsonPath("$.data.status").value("PENDING"));
+  }
+
+  @Test
+  void loginReturnsUserRolePrincipal() throws Exception {
+    AppAccountEntity account = account("user@test.local", AppRole.USER, 1L, null, null, null);
+    UserEntity userEntity = new UserEntity();
+    userEntity.setId(1L);
+    userEntity.setFullName("Test User");
+    userEntity.setEmail("user@test.local");
+    userEntity.setPhone("+79990000001");
+    Authentication auth = new UsernamePasswordAuthenticationToken("user@test.local", "secret", List.of());
+    given(authenticationManager.authenticate(any(Authentication.class))).willReturn(auth);
+    given(appAccountJpaRepository.findByEmail("user@test.local")).willReturn(java.util.Optional.of(account));
+    given(userJpaRepository.findById(1L)).willReturn(java.util.Optional.of(userEntity));
+
+    mockMvc.perform(post("/api/auth/login")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(Map.of("email", "user@test.local", "password", "secret"))))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.success").value(true))
+        .andExpect(jsonPath("$.data.email").value("user@test.local"))
+        .andExpect(jsonPath("$.data.role").value("USER"));
+  }
+
+  @Test
+  void loginReturnsAdminRolePrincipal() throws Exception {
+    AppAccountEntity account = account("admin@test.local", AppRole.ADMIN, null, null, null, null);
+    Authentication auth = new UsernamePasswordAuthenticationToken("admin@test.local", "secret", List.of());
+    given(authenticationManager.authenticate(any(Authentication.class))).willReturn(auth);
+    given(appAccountJpaRepository.findByEmail("admin@test.local")).willReturn(java.util.Optional.of(account));
+
+    mockMvc.perform(post("/api/auth/login")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(Map.of("email", "admin@test.local", "password", "secret"))))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.data.role").value("ADMIN"));
+  }
+
+  @Test
+  void loginReturnsCourierRolePrincipal() throws Exception {
+    AppAccountEntity account = account("courier@test.local", AppRole.COURIER, null, null, null, null);
+    Authentication auth = new UsernamePasswordAuthenticationToken("courier@test.local", "secret", List.of());
+    given(authenticationManager.authenticate(any(Authentication.class))).willReturn(auth);
+    given(appAccountJpaRepository.findByEmail("courier@test.local")).willReturn(java.util.Optional.of(account));
+
+    mockMvc.perform(post("/api/auth/login")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(Map.of("email", "courier@test.local", "password", "secret"))))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.data.role").value("COURIER"));
+  }
+
+  @Test
+  void loginReturnsRestaurantRolePrincipal() throws Exception {
+    AppAccountEntity account = account("restaurant@test.local", AppRole.RESTAURANT, null, 1L, null, null);
+    Authentication auth = new UsernamePasswordAuthenticationToken("restaurant@test.local", "secret", List.of());
+    given(authenticationManager.authenticate(any(Authentication.class))).willReturn(auth);
+    given(appAccountJpaRepository.findByEmail("restaurant@test.local")).willReturn(java.util.Optional.of(account));
+
+    mockMvc.perform(post("/api/auth/login")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(Map.of("email", "restaurant@test.local", "password", "secret"))))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.data.role").value("RESTAURANT"));
+  }
+
+  @Test
+  @WithMockUser(roles = "ADMIN")
+  void adminEndpointAccessibleForAdmin() throws Exception {
+    mockMvc.perform(get("/api/admin/accounts").with(user("admin").roles("ADMIN")))
+        .andExpect(status().isOk());
+  }
+
+  @Test
+  @WithMockUser(roles = "USER")
+  void adminEndpointForbiddenForUser() throws Exception {
+    mockMvc.perform(get("/api/admin/accounts").with(user("user").roles("USER")))
+        .andExpect(status().isForbidden());
+  }
+
+  @Test
+  @WithMockUser(roles = "COURIER")
+  void courierEndpointAccessibleForCourier() throws Exception {
+    AppAccountEntity account = account("courier@test.local", AppRole.COURIER, null, null, 1L, null);
+    given(appAccountJpaRepository.findByEmail("courier@test.local")).willReturn(java.util.Optional.of(account));
+    mockMvc.perform(get("/api/courier/orders/assigned").with(user("courier@test.local").roles("COURIER")))
+        .andExpect(status().isOk());
+  }
+
+  @Test
+  @WithMockUser(roles = "RESTAURANT")
+  void restaurantEndpointAccessibleForRestaurant() throws Exception {
+    AppAccountEntity account = account("restaurant@test.local", AppRole.RESTAURANT, null, 1L, null, null);
+    given(appAccountJpaRepository.findByEmail("restaurant@test.local")).willReturn(java.util.Optional.of(account));
+    mockMvc.perform(get("/api/restaurant/orders").with(user("restaurant@test.local").roles("RESTAURANT")))
+        .andExpect(status().isOk());
+  }
+
+  @Test
+  @WithMockUser(roles = "USER")
+  void restaurantEndpointForbiddenForUser() throws Exception {
+    mockMvc.perform(get("/api/restaurant/orders").with(user("user").roles("USER")))
+        .andExpect(status().isForbidden());
+  }
+
+  private static AppAccountEntity account(
+      String email,
+      AppRole role,
+      Long linkedUserId,
+      Long linkedRestaurantId,
+      Long linkedCourierId,
+      Long linkedAdminId
+  ) {
+    AppAccountEntity e = new AppAccountEntity();
+    e.setId(1L);
+    e.setEmail(email);
+    e.setPasswordHash("hash");
+    e.setRole(role);
+    e.setLinkedUserId(linkedUserId);
+    e.setLinkedRestaurantId(linkedRestaurantId);
+    e.setLinkedCourierId(linkedCourierId);
+    e.setLinkedAdminId(linkedAdminId);
+    e.setIsActive(Boolean.TRUE);
+    e.setCreatedAt(LocalDateTime.now());
+    e.setUpdatedAt(LocalDateTime.now());
+    return e;
   }
 }
 

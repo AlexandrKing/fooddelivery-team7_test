@@ -16,3 +16,8 @@ VALUES
     ('admin', 'admin@test.local', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'System Admin', 'SUPER_ADMIN', 'ALL', TRUE)
 ON CONFLICT (username) DO NOTHING;
 
+INSERT INTO courier_users (username, email, password, full_name, phone, vehicle_type, status, is_active)
+VALUES
+    ('courier', 'courier@test.local', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'Demo Courier', '+79990000003', 'bike', 'online', TRUE)
+ON CONFLICT (username) DO NOTHING;
+

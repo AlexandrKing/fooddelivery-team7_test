@@ -2,12 +2,16 @@ package com.team7.service.client;
 
 import com.team7.model.client.User;
 import com.team7.model.client.Address;
+import com.team7.persistence.AppAccountJpaRepository;
+import com.team7.persistence.entity.AppAccountEntity;
+import com.team7.persistence.entity.AppRole;
 import com.team7.repository.client.ClientAuthRepository;
 import com.team7.service.telegramnotificationservice.TelegramNotificationService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.time.LocalDateTime;
 import java.util.regex.Pattern;
 
 @Service
@@ -40,11 +44,13 @@ public class AuthServiceImpl implements AuthService {
             throw new IllegalArgumentException("Пароли не совпадают");
         }
         ClientAuthRepository repository = requireRepository();
-        User created = repository.createUser(name, email, phone, passwordEncoder.encode(password));
+        String encodedPassword = passwordEncoder.encode(password);
+        User created = repository.createUser(name, email, phone, encodedPassword);
         created.setPassword(password);
         if (created.getAddresses() == null) {
             created.setAddresses(new ArrayList<>());
         }
+        ensureUserAccount(created.getId(), created.getEmail(), encodedPassword);
         return created;
     }
 
@@ -137,5 +143,23 @@ public class AuthServiceImpl implements AuthService {
             throw new IllegalArgumentException("Пользователь не найден");
         }
         return user;
+    }
+
+    private void ensureUserAccount(Long userId, String email, String passwordHash) {
+        if (email == null || email.isBlank()) {
+            return;
+        }
+        appAccountJpaRepository.findByEmail(email).ifPresentOrElse(existing -> {
+        }, () -> {
+            AppAccountEntity account = new AppAccountEntity();
+            account.setEmail(email);
+            account.setPasswordHash(passwordHash);
+            account.setRole(AppRole.USER);
+            account.setLinkedUserId(userId);
+            account.setIsActive(Boolean.TRUE);
+            account.setCreatedAt(LocalDateTime.now());
+            account.setUpdatedAt(LocalDateTime.now());
+            appAccountJpaRepository.save(account);
+        });
     }
 }

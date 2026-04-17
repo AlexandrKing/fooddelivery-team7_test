@@ -25,8 +25,11 @@ public class CustomUserDetailsService implements UserDetailsService {
     if (user == null) {
       throw new UsernameNotFoundException("User not found");
     }
+    if (!user.active()) {
+      throw new UsernameNotFoundException("User is inactive");
+    }
 
-    List<GrantedAuthority> authorities = List.of(new SimpleGrantedAuthority("ROLE_USER"));
+    List<GrantedAuthority> authorities = List.of(new SimpleGrantedAuthority("ROLE_" + user.role()));
     return new User(user.email(), user.passwordHash(), authorities);
   }
 }

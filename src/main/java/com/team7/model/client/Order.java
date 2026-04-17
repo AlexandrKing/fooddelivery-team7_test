@@ -22,4 +22,6 @@ public class Order {
     private LocalDateTime preferredDeliveryTime;
     private Double totalAmount;
     private LocalDateTime createdAt;
+    /** Назначенный курьер (если есть запись в courier_assigned_orders). */
+    private Long courierId;
 }

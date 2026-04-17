@@ -2,19 +2,29 @@ package com.team7.service.client;
 
 import com.team7.model.client.*;
 import org.springframework.stereotype.Service;
+import com.team7.persistence.CourierAssignedOrderJpaRepository;
+import com.team7.persistence.entity.CourierAssignedOrderEntity;
 import com.team7.repository.client.OrderRepository;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class OrderServiceImpl implements OrderService {
     private final CartService cartService;
     private final OrderRepository orderRepository;
+    private final CourierAssignedOrderJpaRepository courierAssignedOrderJpaRepository;
 
-    public OrderServiceImpl(CartService cartService, OrderRepository orderRepository) {
+    public OrderServiceImpl(
+        CartService cartService,
+        OrderRepository orderRepository,
+        CourierAssignedOrderJpaRepository courierAssignedOrderJpaRepository
+    ) {
         this.cartService = cartService;
         this.orderRepository = orderRepository;
+        this.courierAssignedOrderJpaRepository = courierAssignedOrderJpaRepository;
     }
 
     @Override
@@ -57,17 +67,23 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public Order getOrder(Long orderId) {
-        return orderRepository.getOrder(orderId);
+        Order order = orderRepository.getOrder(orderId);
+        attachCourierIds(List.of(order));
+        return order;
     }
 
     @Override
     public List<Order> getUserOrders(Long userId) {
-        return orderRepository.getUserOrders(userId);
+        List<Order> orders = orderRepository.getUserOrders(userId);
+        attachCourierIds(orders);
+        return orders;
     }
 
     @Override
     public Order cancelOrder(Long orderId) {
-        return orderRepository.cancelOrder(orderId);
+        Order order = orderRepository.cancelOrder(orderId);
+        attachCourierIds(List.of(order));
+        return order;
     }
 
     @Override
@@ -81,5 +97,25 @@ public class OrderServiceImpl implements OrderService {
             LocalDateTime.now().plusHours(1),
             originalOrder.getPaymentMethod()
         );
+    }
+
+    private void attachCourierIds(List<Order> orders) {
+        if (orders == null || orders.isEmpty()) {
+            return;
+        }
+        List<Long> ids = orders.stream().map(Order::getId).filter(id -> id != null).distinct().toList();
+        if (ids.isEmpty()) {
+            return;
+        }
+        List<CourierAssignedOrderEntity> assigned = courierAssignedOrderJpaRepository.findByOrderIdIn(ids);
+        Map<Long, Long> byOrder = new HashMap<>();
+        for (CourierAssignedOrderEntity a : assigned) {
+            byOrder.putIfAbsent(a.getOrderId(), a.getCourierId());
+        }
+        for (Order o : orders) {
+            if (o.getId() != null) {
+                o.setCourierId(byOrder.get(o.getId()));
+            }
+        }
     }
 }

@@ -20,6 +20,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNull;
@@ -150,7 +151,7 @@ public class OrderRepository {
     o.setId(e.getId());
     o.setUserId(e.getUserId());
     o.setRestaurantId(e.getRestaurantId());
-    o.setStatus(OrderStatus.valueOf(e.getStatus()));
+    o.setStatus(parseOrderStatus(e.getStatus()));
     o.setDeliveryAddress(e.getDeliveryAddress());
     o.setDeliveryType(DeliveryType.valueOf(e.getDeliveryType()));
     o.setPaymentMethod(PaymentMethod.valueOf(e.getPaymentMethod()));
@@ -174,6 +175,25 @@ public class OrderRepository {
       item.setQuantity(line.getQuantity());
       return item;
     }).collect(Collectors.toList());
+  }
+
+  /**
+   * Maps DB status string to client enum. Courier and restaurant flows may persist values
+   * not present in older enum definitions; aliases and fallbacks keep user history readable.
+   */
+  private static OrderStatus parseOrderStatus(String raw) {
+    if (raw == null || raw.isBlank()) {
+      return OrderStatus.PENDING;
+    }
+    String u = raw.trim().toUpperCase(Locale.ROOT);
+    if ("ON_THE_WAY".equals(u)) {
+      return OrderStatus.IN_DELIVERY;
+    }
+    OrderStatus s = OrderStatus.fromString(u);
+    if (s != null) {
+      return s;
+    }
+    return OrderStatus.DELIVERING;
   }
 
   public static final class OrderCreationResult {
