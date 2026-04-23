@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react';
-import { Map, Placemark, YMaps } from 'react-yandex-maps';
+import { Map, Placemark, YMaps } from '@pbe/react-yandex-maps';
 
 const MOSCOW_CENTER = [55.751574, 37.573856];
 const DEFAULT_CENTER = [55.7558, 37.6173];

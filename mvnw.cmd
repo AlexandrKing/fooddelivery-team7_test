@@ -19,10 +19,17 @@ if "%JAVA_HOME%"=="" (
   set JAVA_EXE=%JAVA_HOME%\bin\java.exe
 )
 
-where "%JAVA_EXE%" >NUL 2>&1
-if ERRORLEVEL 1 (
-  echo Error: JAVA_HOME is not set correctly or java is not in PATH.
-  exit /b 1
+if "%JAVA_HOME%"=="" (
+  where "%JAVA_EXE%" >NUL 2>&1
+  if ERRORLEVEL 1 (
+    echo Error: JAVA_HOME is not set correctly or java is not in PATH.
+    exit /b 1
+  )
+) else (
+  if not exist "%JAVA_EXE%" (
+    echo Error: JAVA_HOME is not set correctly or java is not in PATH.
+    exit /b 1
+  )
 )
 
 if not exist "%WRAPPER_JAR%" (

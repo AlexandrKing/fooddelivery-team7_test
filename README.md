@@ -1,6 +1,7 @@
 # FoodDelivery
 
-Для запуска приложения можно запустить `Main.java` и выбрать нужную User Story.
+Для запуска backend используйте Spring Boot приложение `FoodDeliveryApplication`
+или Maven команду `./mvnw spring-boot:run` (`.\mvnw.cmd spring-boot:run` на Windows).
 
 ## Testing
 

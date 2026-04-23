@@ -4,7 +4,10 @@
 
 ## Запуск
 
-1. Подните backend (`mvn spring-boot:run`), по умолчанию порт **8080**.
+1. Поднимите backend (рекомендуется Maven Wrapper):
+   - Windows: `.\mvnw.cmd spring-boot:run`
+   - Linux/macOS: `./mvnw spring-boot:run`
+   По умолчанию backend слушает порт **8080**.
 2. В этой папке:
 
 ```bash
