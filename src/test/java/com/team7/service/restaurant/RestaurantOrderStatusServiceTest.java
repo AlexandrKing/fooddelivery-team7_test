@@ -14,6 +14,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 
@@ -52,11 +53,12 @@ class RestaurantOrderStatusServiceTest {
     OrderEntity updated = service.updateRestaurantOrderStatus(4L, 10L, "PREPARING");
     assertEquals("PREPARING", updated.getStatus());
 
-    IllegalArgumentException invalidValue = assertThrows(
+    IllegalArgumentException invalidTransitionToDelivered = assertThrows(
         IllegalArgumentException.class,
         () -> service.updateRestaurantOrderStatus(4L, 10L, "DELIVERED")
     );
-    assertEquals("Invalid status value", invalidValue.getMessage());
+    assertTrue(invalidTransitionToDelivered.getMessage().contains("Недопустимый переход статуса заказа"));
+    assertTrue(invalidTransitionToDelivered.getMessage().contains("PREPARING -> DELIVERED"));
 
     order.setStatus("READY");
 
@@ -64,7 +66,8 @@ class RestaurantOrderStatusServiceTest {
         IllegalArgumentException.class,
         () -> service.updateRestaurantOrderStatus(4L, 10L, "PREPARING")
     );
-    assertEquals("Invalid status transition", invalidTransition.getMessage());
+    assertTrue(invalidTransition.getMessage().contains("Недопустимый переход статуса заказа"));
+    assertTrue(invalidTransition.getMessage().contains("READY -> PREPARING"));
   }
 
   @Test

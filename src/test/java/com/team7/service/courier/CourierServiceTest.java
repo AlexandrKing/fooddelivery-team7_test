@@ -16,6 +16,7 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
@@ -118,13 +119,15 @@ class CourierServiceTest {
         IllegalArgumentException.class,
         () -> service.updateAssignedOrderStatus(9L, 100L, "DELIVERED")
     );
-    assertEquals("Invalid status transition", invalidTransition.getMessage());
+    assertTrue(invalidTransition.getMessage().contains("Недопустимый переход статуса курьера"));
+    assertTrue(invalidTransition.getMessage().contains("ASSIGNED -> DELIVERED"));
 
     IllegalArgumentException invalidStatus = assertThrows(
         IllegalArgumentException.class,
         () -> service.updateAssignedOrderStatus(9L, 100L, "READY")
     );
-    assertEquals("Invalid status value", invalidStatus.getMessage());
+    assertTrue(invalidStatus.getMessage().contains("Недопустимый переход статуса курьера"));
+    assertTrue(invalidStatus.getMessage().contains("ASSIGNED -> READY"));
 
     given(courierAssignedOrderJpaRepository.findByCourierIdAndOrderId(9L, 404L)).willReturn(Optional.empty());
     assertThrows(IllegalArgumentException.class, () -> service.updateAssignedOrderStatus(9L, 404L, "DELIVERED"));

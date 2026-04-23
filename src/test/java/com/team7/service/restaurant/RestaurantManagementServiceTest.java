@@ -15,6 +15,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
@@ -63,7 +64,8 @@ class RestaurantManagementServiceTest {
         IllegalArgumentException.class,
         () -> service.updateRestaurantOrderStatus(3L, 10L, "delivered")
     );
-    assertEquals("Invalid status value", invalidTransition.getMessage());
+    assertTrue(invalidTransition.getMessage().contains("Недопустимый переход статуса заказа"));
+    assertTrue(invalidTransition.getMessage().contains("PREPARING -> DELIVERED"));
 
     given(orderJpaRepository.findById(99L)).willReturn(Optional.empty());
     assertThrows(IllegalArgumentException.class, () -> service.updateRestaurantOrderStatus(3L, 99L, "ready"));
