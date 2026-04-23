@@ -22,13 +22,16 @@ public class AuthServiceImpl implements AuthService {
     private static final Pattern PHONE_PATTERN = Pattern.compile("^\\+79[0-9]{9}$");
 
     private final ClientAuthRepository authRepository;
+    private final AppAccountJpaRepository appAccountJpaRepository;
     private final PasswordEncoder passwordEncoder;
     private final TelegramNotificationService telegramNotificationService;
 
     public AuthServiceImpl(ClientAuthRepository authRepository,
+            AppAccountJpaRepository appAccountJpaRepository,
             PasswordEncoder passwordEncoder,
             TelegramNotificationService telegramNotificationService) {
         this.authRepository = authRepository;
+        this.appAccountJpaRepository = appAccountJpaRepository;
         this.passwordEncoder = passwordEncoder;
         this.telegramNotificationService = telegramNotificationService;
     }
