@@ -40,16 +40,18 @@ public class RestaurantController {
   }
 
   private RestaurantDtos.RestaurantResponse toRestaurantResponse(Restaurant restaurant) {
-    return new RestaurantDtos.RestaurantResponse(
-        restaurant.getId(),
-        restaurant.getName(),
-        restaurant.getAddress(),
-        restaurant.getCuisineType(),
-        restaurant.getRating(),
-        restaurant.getDeliveryTime(),
-        restaurant.getMinOrderAmount(),
-        restaurant.getIsActive()
-    );
+    RestaurantDtos.RestaurantResponse dto = new RestaurantDtos.RestaurantResponse();
+    dto.setId(restaurant.getId());
+    dto.setName(restaurant.getName());
+    dto.setAddress(restaurant.getAddress());
+    dto.setLatitude(restaurant.getLatitude());
+    dto.setLongitude(restaurant.getLongitude());
+    dto.setCuisineType(restaurant.getCuisineType());
+    dto.setRating(restaurant.getRating());
+    dto.setDeliveryTime(restaurant.getDeliveryTime());
+    dto.setMinOrderAmount(restaurant.getMinOrderAmount());
+    dto.setIsActive(restaurant.getIsActive());
+    return dto;
   }
 
   private RestaurantDtos.MenuItemResponse toMenuItemResponse(Menu menu) {

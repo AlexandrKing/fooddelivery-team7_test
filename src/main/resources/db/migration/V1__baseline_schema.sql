@@ -18,6 +18,8 @@ CREATE TABLE IF NOT EXISTS restaurants (
     password VARCHAR(255) NOT NULL,
     phone VARCHAR(50) NOT NULL,
     address TEXT NOT NULL,
+    latitude DOUBLE PRECISION,
+    longitude DOUBLE PRECISION,
     cuisine_type VARCHAR(120),
     description TEXT,
     status VARCHAR(50) DEFAULT 'PENDING',

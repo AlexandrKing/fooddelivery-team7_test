@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { Map, Placemark, YMaps } from 'react-yandex-maps';
 
+const MOSCOW_CENTER = [55.751574, 37.573856];
 const DEFAULT_CENTER = [55.7558, 37.6173];
 const DEFAULT_ZOOM = 10;
 
@@ -24,6 +25,7 @@ function toPoint(restaurant) {
 
 export default function YandexMap({ restaurants = [], onSelectRestaurant }) {
   const apiKey = import.meta.env.VITE_YANDEX_MAPS_API_KEY;
+  console.log('API Key used:', import.meta.env.VITE_YANDEX_MAPS_API_KEY);
   const mapRef = useRef(null);
   const placemarkSetRef = useRef(new WeakSet());
   const points = useMemo(() => restaurants.map(toPoint).filter(Boolean), [restaurants]);
@@ -98,17 +100,22 @@ export default function YandexMap({ restaurants = [], onSelectRestaurant }) {
     });
   }, [points]);
 
-  const defaultState = {
-    center,
-    zoom: DEFAULT_ZOOM,
-  };
+  console.log('Restaurants on map:', restaurants);
 
   return (
     <section className="yandex-map-section">
       <h3 className="yandex-map-section__title">Наше расположение</h3>
-      <YMaps query={{ apikey: apiKey, lang: 'ru_RU' }}>
-        <div style={{ width: '100%', height: '400px' }}>
-          <Map defaultState={defaultState} width="100%" height="100%" instanceRef={mapRef}>
+      <div
+        className="map-wrapper"
+        style={{ width: '100%', height: '450px', position: 'relative' }}
+      >
+        <YMaps query={{ apikey: apiKey, lang: 'ru_RU' }}>
+          <Map
+            defaultState={{ center: MOSCOW_CENTER, zoom: 10 }}
+            width="100%"
+            height="100%"
+            instanceRef={mapRef}
+          >
             {points.map((point) => (
               <Placemark
                 key={point.id}
@@ -132,8 +139,8 @@ export default function YandexMap({ restaurants = [], onSelectRestaurant }) {
               />
             ))}
           </Map>
-        </div>
-      </YMaps>
+        </YMaps>
+      </div>
     </section>
   );
 }

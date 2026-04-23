@@ -53,6 +53,8 @@ public class RestaurantRepository {
     restaurant.setId(e.getId());
     restaurant.setName(e.getName());
     restaurant.setAddress(e.getAddress());
+    restaurant.setLatitude(e.getLatitude());
+    restaurant.setLongitude(e.getLongitude());
     restaurant.setCuisineType(e.getCuisineType());
     restaurant.setRating(e.getRating() != null ? e.getRating() : 0.0);
     restaurant.setDeliveryTime(e.getDeliveryTime() != null ? e.getDeliveryTime() : 0);

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import RestaurantCard from '../components/RestaurantCard.jsx';
 import YandexMap from '../components/YandexMap.jsx';
 import { fetchRestaurants } from '../services/restaurantsApi.js';
@@ -22,7 +22,6 @@ function buildFetchParams(appliedRating, appliedDeliveryTime) {
 }
 
 export default function RestaurantsPage() {
-  const navigate = useNavigate();
   const [draftRating, setDraftRating] = useState('');
   const [draftDeliveryTime, setDraftDeliveryTime] = useState('');
   const [appliedRating, setAppliedRating] = useState('');
@@ -75,17 +74,6 @@ export default function RestaurantsPage() {
     setDraftDeliveryTime('');
     setAppliedRating('');
     setAppliedDeliveryTime('');
-  }
-
-  function handleRestaurantSelect(restaurant) {
-    if (restaurant?.id == null) {
-      return;
-    }
-    window.setTimeout(() => {
-      navigate(`/restaurants/${restaurant.id}/menu`, {
-        state: { restaurantName: restaurant.name },
-      });
-    }, 300);
   }
 
   const busy = status === 'loading';
@@ -154,24 +142,27 @@ export default function RestaurantsPage() {
         <p className="state state--empty">Список пуст.</p>
       )}
 
-      {status === 'success' && restaurants.length > 0 && (
-        <ul className="restaurant-list">
-          {restaurants.map((r) => (
-            <li key={r.id} id={`restaurant-card-${r.id}`} className="restaurant-list__item">
-              <RestaurantCard restaurant={r} />
-              <Link
-                className="link-button"
-                to={`/restaurants/${r.id}/menu`}
-                state={{ restaurantName: r.name }}
-              >
-                Меню
-              </Link>
-            </li>
-          ))}
-        </ul>
+      {status === 'success' && (
+        <>
+          {restaurants.length > 0 && (
+            <ul className="restaurant-list">
+              {restaurants.map((r) => (
+                <li key={r.id} id={`restaurant-card-${r.id}`} className="restaurant-list__item">
+                  <RestaurantCard restaurant={r} />
+                  <Link
+                    className="link-button"
+                    to={`/restaurants/${r.id}/menu`}
+                    state={{ restaurantName: r.name }}
+                  >
+                    Меню
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+          <YandexMap restaurants={restaurants} />
+        </>
       )}
-
-      <YandexMap restaurants={restaurants} onSelectRestaurant={handleRestaurantSelect} />
     </section>
   );
 }
