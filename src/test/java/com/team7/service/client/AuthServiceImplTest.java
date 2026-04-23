@@ -171,7 +171,9 @@ class AuthServiceImplTest {
     given(passwordEncoder.matches("secret", "encoded")).willReturn(true);
     authService.login("alex@test.local", "secret");
 
-    Address address = new Address(null, "home", "street", null, null, null, null);
+    Address address = new Address();
+    address.setLabel("home");
+    address.setAddress("street");
     User refreshed = user(5L, "Alex", "alex@test.local", "+79990000001", "encoded");
     refreshed.setAddresses(new ArrayList<>());
     refreshed.getAddresses().add(address);
