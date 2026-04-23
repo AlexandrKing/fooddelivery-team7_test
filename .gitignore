@@ -35,6 +35,7 @@ build/
 
 ### VS Code ###
 .vscode/
+frontend/.env
 
 ### Mac OS ###
 .DS_Store

@@ -10,13 +10,15 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Restaurant {
-    private Long id;
-    private String name;
-    private String address;
-    private String cuisineType;
-    private Double rating;
-    private Integer deliveryTime;
-    private Double minOrderAmount;
-    private List<String> workingHours;
-    private Boolean isActive;
+  private Long id;
+  private String name;
+  private String address;
+  private Double latitude;
+  private Double longitude;
+  private String cuisineType;
+  private Double rating;
+  private Integer deliveryTime;
+  private Double minOrderAmount;
+  private List<String> workingHours;
+  private Boolean isActive;
 }

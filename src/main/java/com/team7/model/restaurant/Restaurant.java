@@ -19,6 +19,8 @@ public class Restaurant {
   private String password;
   private String phone;
   private String address;
+  private Double latitude;
+  private Double longitude;
   private String cuisineType;
   private String description;
   private String status;

@@ -528,6 +528,22 @@ body {
   gap: 0.7rem;
 }
 
+.yandex-map-section {
+  margin-top: 1.25rem;
+  padding: 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-card);
+  box-shadow: var(--shadow-soft);
+  backdrop-filter: blur(8px);
+}
+
+.yandex-map-section__title {
+  margin: 0 0 0.75rem;
+  font-size: 1.05rem;
+  color: var(--color-text);
+}
+
 .restaurant-card,
 .menu-item-card,
 .cart-item-card,

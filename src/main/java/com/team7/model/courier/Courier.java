@@ -12,7 +12,8 @@ public class Courier {
   private String phone;
   private String vehicleType;
   private String status;
-  private String currentLocation;
+  private Double latitude;
+  private Double longitude;
   private BigDecimal rating;
   private Integer completedOrders;
   private BigDecimal balance;
@@ -58,8 +59,10 @@ public class Courier {
   public void setVehicleType(String vehicleType) { this.vehicleType = vehicleType; }
   public String getStatus() { return status; }
   public void setStatus(String status) { this.status = status; }
-  public String getCurrentLocation() { return currentLocation; }
-  public void setCurrentLocation(String currentLocation) { this.currentLocation = currentLocation; }
+  public Double getLatitude() { return latitude; }
+  public void setLatitude(Double latitude) { this.latitude = latitude; }
+  public Double getLongitude() { return longitude; }
+  public void setLongitude(Double longitude) { this.longitude = longitude; }
   public BigDecimal getRating() { return rating; }
   public void setRating(BigDecimal rating) { this.rating = rating; }
   public Integer getCompletedOrders() { return completedOrders; }
