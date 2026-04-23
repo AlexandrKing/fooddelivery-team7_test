@@ -165,6 +165,12 @@ export default function RestaurantMenuPage() {
           ))}
         </ul>
       )}
+
+      {errorMessage && status === 'success' && (
+        <div className="state state--error" role="alert">
+          <p>{errorMessage}</p>
+        </div>
+      )}
     </section>
   );
 }

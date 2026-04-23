@@ -1,6 +1,6 @@
 package com.team7.api;
 
-import tools.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.team7.persistence.AppAccountJpaRepository;
 import com.team7.persistence.AdminUserJpaRepository;
 import com.team7.persistence.CourierUserJpaRepository;
@@ -9,6 +9,7 @@ import com.team7.persistence.entity.AppAccountEntity;
 import com.team7.persistence.entity.AppRole;
 import com.team7.persistence.entity.UserEntity;
 import com.team7.model.client.*;
+import com.team7.repository.client.UserSecurityRepository;
 import com.team7.service.client.AuthService;
 import com.team7.service.client.CartService;
 import com.team7.service.client.OrderService;
@@ -18,8 +19,9 @@ import com.team7.service.courier.CourierService;
 import com.team7.service.restaurant.RestaurantManagementService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -43,6 +45,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest
 @AutoConfigureMockMvc
+@ActiveProfiles("test")
 class RestApiIntegrationTest {
 
   @Autowired
@@ -86,6 +89,8 @@ class RestApiIntegrationTest {
 
   @MockitoBean
   private RestaurantManagementService restaurantManagementService;
+  @MockitoBean
+  private UserSecurityRepository userSecurityRepository;
 
   @Test
   void authRegisterReturnsUnifiedSuccessResponse() throws Exception {
@@ -228,6 +233,10 @@ class RestApiIntegrationTest {
 
     given(orderService.createOrder(anyLong(), anyLong(), anyString(), any(), any(), any()))
         .willReturn(order);
+    given(userSecurityRepository.findByEmail("api-user"))
+        .willReturn(new UserSecurityRepository.SecurityUserRecord(
+            1L, "api-user", "hash", "USER", 1L, null, null, null, true
+        ));
 
     Map<String, Object> req = Map.of(
         "userId", 1,
@@ -348,6 +357,53 @@ class RestApiIntegrationTest {
   @WithMockUser(roles = "USER")
   void restaurantEndpointForbiddenForUser() throws Exception {
     mockMvc.perform(get("/api/restaurant/orders").with(user("user").roles("USER")))
+        .andExpect(status().isForbidden());
+  }
+
+  @Test
+  void authMeWithoutAuthenticatedAccountReturnsUnauthorized() throws Exception {
+    mockMvc.perform(get("/api/auth/me"))
+        .andExpect(status().isUnauthorized());
+  }
+
+  @Test
+  @WithMockUser(username = "user@test.local", roles = "USER")
+  void authMeReturnsUserPrincipalForAuthenticatedUser() throws Exception {
+    AppAccountEntity account = account("user@test.local", AppRole.USER, 1L, null, null, null);
+    UserEntity userEntity = new UserEntity();
+    userEntity.setId(1L);
+    userEntity.setFullName("Test User");
+    userEntity.setEmail("user@test.local");
+    userEntity.setPhone("+79990000001");
+    given(appAccountJpaRepository.findByEmail("user@test.local")).willReturn(java.util.Optional.of(account));
+    given(userJpaRepository.findById(1L)).willReturn(java.util.Optional.of(userEntity));
+
+    mockMvc.perform(get("/api/auth/me").with(user("user@test.local").roles("USER")))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.success").value(true))
+        .andExpect(jsonPath("$.data.email").value("user@test.local"))
+        .andExpect(jsonPath("$.data.role").value("USER"))
+        .andExpect(jsonPath("$.data.id").value(1));
+  }
+
+  @Test
+  @WithMockUser(username = "user@test.local", roles = "USER")
+  void authMeReturnsErrorWhenLinkedUserProfileMissing() throws Exception {
+    AppAccountEntity account = account("user@test.local", AppRole.USER, 99L, null, null, null);
+    given(appAccountJpaRepository.findByEmail("user@test.local")).willReturn(java.util.Optional.of(account));
+    given(userJpaRepository.findById(99L)).willReturn(java.util.Optional.empty());
+
+    mockMvc.perform(get("/api/auth/me").with(user("user@test.local").roles("USER")))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.success").value(false))
+        .andExpect(jsonPath("$.error").value("Bad Request"))
+        .andExpect(jsonPath("$.message").value("Профиль пользователя не найден"));
+  }
+
+  @Test
+  @WithMockUser(roles = "COURIER")
+  void clientEndpointForbiddenForCourier() throws Exception {
+    mockMvc.perform(get("/api/client/courier-reviews/mine").with(user("courier").roles("COURIER")))
         .andExpect(status().isForbidden());
   }
 

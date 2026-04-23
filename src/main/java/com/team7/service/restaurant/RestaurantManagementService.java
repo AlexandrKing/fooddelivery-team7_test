@@ -4,6 +4,7 @@ import com.team7.persistence.DishJpaRepository;
 import com.team7.persistence.OrderJpaRepository;
 import com.team7.persistence.entity.DishEntity;
 import com.team7.persistence.entity.OrderEntity;
+import com.team7.service.order.OrderStatusTransitionPolicy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,7 +32,8 @@ public class RestaurantManagementService {
     if (!restaurantId.equals(order.getRestaurantId())) {
       throw new IllegalArgumentException("Order does not belong to restaurant");
     }
-    order.setStatus(status.toUpperCase());
+    String nextStatus = OrderStatusTransitionPolicy.validateRestaurantTransition(order.getStatus(), status);
+    order.setStatus(nextStatus);
     return orderJpaRepository.save(order);
   }
 

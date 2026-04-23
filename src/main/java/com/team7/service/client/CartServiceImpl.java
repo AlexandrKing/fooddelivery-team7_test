@@ -24,6 +24,9 @@ public class CartServiceImpl implements CartService {
 
     @Override
     public Cart updateItemQuantity(Long userId, Long itemId, Integer quantity) {
+        if (quantity == null) {
+            throw new IllegalArgumentException("Quantity is required");
+        }
         if (quantity <= 0) {
             return removeItem(userId, itemId);
         }
