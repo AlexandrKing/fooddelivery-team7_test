@@ -3,8 +3,13 @@ import {
   claimCourierOrder,
   fetchAssignedCourierOrders,
   fetchAvailableCourierOrders,
+  fetchCourierBalance,
+  fetchCourierStats,
+  fetchCourierTransactions,
   updateCourierOrderStatus,
 } from '../services/courierApi.js';
+
+const TRANSACTION_PAGE_SIZE = 10;
 
 const COURIER_STATUSES = [
   'ASSIGNED',
@@ -43,6 +48,12 @@ export default function CourierDashboardPage() {
   const [successMessage, setSuccessMessage] = useState('');
   const [updatingOrderId, setUpdatingOrderId] = useState(null);
   const [claimingOrderId, setClaimingOrderId] = useState(null);
+  const [balance, setBalance] = useState(null);
+  const [transactions, setTransactions] = useState([]);
+  const [transactionPage, setTransactionPage] = useState(0);
+  const [transactionsLast, setTransactionsLast] = useState(true);
+  const [loadingMoreTransactions, setLoadingMoreTransactions] = useState(false);
+  const [stats, setStats] = useState({ balance: 0, earnedToday: 0, earnedThisWeek: 0 });
 
   const sortedOrders = useMemo(
     () => [...orders].sort((a, b) => Number(b.assignmentId) - Number(a.assignmentId)),
@@ -50,12 +61,20 @@ export default function CourierDashboardPage() {
   );
 
   const reloadLists = useCallback(async () => {
-    const [assignedData, availableData] = await Promise.all([
+    const [assignedData, availableData, balanceData, transactionData, statsData] = await Promise.all([
       fetchAssignedCourierOrders(),
       fetchAvailableCourierOrders(),
+      fetchCourierBalance(),
+      fetchCourierTransactions({ page: 0, size: TRANSACTION_PAGE_SIZE }),
+      fetchCourierStats(),
     ]);
     setOrders(assignedData);
     setAvailable(availableData);
+    setBalance(balanceData?.balance ?? 0);
+    setStats(statsData);
+    setTransactions(transactionData.content);
+    setTransactionPage(transactionData.page ?? 0);
+    setTransactionsLast(Boolean(transactionData.last));
   }, []);
 
   useEffect(() => {
@@ -82,6 +101,13 @@ export default function CourierDashboardPage() {
     };
   }, [reloadLists]);
 
+  useEffect(() => {
+    const id = window.setInterval(() => {
+      reloadLists().catch(() => {});
+    }, 15000);
+    return () => window.clearInterval(id);
+  }, [reloadLists]);
+
   async function handleChangeStatus(orderId, nextStatus) {
     setUpdatingOrderId(orderId);
     setError('');
@@ -100,11 +126,42 @@ export default function CourierDashboardPage() {
             : item
         )
       );
+      if (nextStatus === 'DELIVERED') {
+        const [balanceData, transactionData, statsData] = await Promise.all([
+          fetchCourierBalance(),
+          fetchCourierTransactions({ page: 0, size: TRANSACTION_PAGE_SIZE }),
+          fetchCourierStats(),
+        ]);
+        setBalance(balanceData?.balance ?? 0);
+        setStats(statsData);
+        setTransactions(transactionData.content);
+        setTransactionPage(transactionData.page ?? 0);
+        setTransactionsLast(Boolean(transactionData.last));
+      }
       setSuccessMessage(`Статус заказа #${orderId} обновлен: ${STATUS_LABELS[nextStatus] || nextStatus}`);
     } catch (e) {
       setError(e?.message || 'Не удалось обновить статус доставки');
     } finally {
       setUpdatingOrderId(null);
+    }
+  }
+
+  async function handleLoadMoreTransactions() {
+    const nextPage = transactionPage + 1;
+    setLoadingMoreTransactions(true);
+    setError('');
+    try {
+      const transactionData = await fetchCourierTransactions({
+        page: nextPage,
+        size: TRANSACTION_PAGE_SIZE,
+      });
+      setTransactions((prev) => [...prev, ...transactionData.content]);
+      setTransactionPage(transactionData.page ?? nextPage);
+      setTransactionsLast(Boolean(transactionData.last));
+    } catch (e) {
+      setError(e?.message || 'Не удалось загрузить начисления');
+    } finally {
+      setLoadingMoreTransactions(false);
     }
   }
 
@@ -137,6 +194,65 @@ export default function CourierDashboardPage() {
           <p>{successMessage}</p>
         </div>
       )}
+
+      <section className="dashboard-block">
+        <h3>Сводка</h3>
+        <ul className="order-list">
+          <li className="order-card">
+            <div className="order-card__head">
+              <h3>Баланс</h3>
+              <span className="badge">{asCurrency(stats.balance ?? balance)}</span>
+            </div>
+          </li>
+          <li className="order-card">
+            <div className="order-card__head">
+              <h3>Сегодня</h3>
+              <span className="badge">{asCurrency(stats.earnedToday)}</span>
+            </div>
+          </li>
+          <li className="order-card">
+            <div className="order-card__head">
+              <h3>Неделя</h3>
+              <span className="badge">{asCurrency(stats.earnedThisWeek)}</span>
+            </div>
+          </li>
+        </ul>
+      </section>
+
+      <section className="dashboard-block">
+        <h3>Баланс</h3>
+        <p className="order-card__line">
+          Текущий баланс: <strong>{asCurrency(balance)}</strong>
+        </p>
+        {transactions.length === 0 ? (
+          <p className="state state--empty">Начислений пока нет.</p>
+        ) : (
+          <ul className="order-list">
+            {transactions.map((t) => (
+              <li key={t.id} className="order-card">
+                <div className="order-card__head">
+                  <h3>Начисление #{t.id}</h3>
+                  <span className="badge">{asCurrency(t.amount)}</span>
+                </div>
+                <p className="order-card__line">
+                  Заказ #{t.orderId} · {t.type || 'DELIVERY_FEE'}
+                </p>
+                <p className="order-card__line">Дата: {asDate(t.createdAt)}</p>
+              </li>
+            ))}
+          </ul>
+        )}
+        {!transactionsLast && (
+          <button
+            type="button"
+            className="filters-form__btn"
+            onClick={handleLoadMoreTransactions}
+            disabled={loadingMoreTransactions}
+          >
+            {loadingMoreTransactions ? 'Загрузка...' : 'Загрузить еще'}
+          </button>
+        )}
+      </section>
 
       <section className="dashboard-block">
         <h3>Доступные заказы (доставка)</h3>

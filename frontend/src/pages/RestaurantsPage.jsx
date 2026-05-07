@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import RestaurantCard from '../components/RestaurantCard.jsx';
 import YandexMap from '../components/YandexMap.jsx';
 import { fetchRestaurants } from '../services/restaurantsApi.js';
@@ -22,6 +22,7 @@ function buildFetchParams(appliedRating, appliedDeliveryTime) {
 }
 
 export default function RestaurantsPage() {
+  const navigate = useNavigate();
   const [draftRating, setDraftRating] = useState('');
   const [draftDeliveryTime, setDraftDeliveryTime] = useState('');
   const [appliedRating, setAppliedRating] = useState('');
@@ -160,7 +161,16 @@ export default function RestaurantsPage() {
               ))}
             </ul>
           )}
-          <YandexMap restaurants={restaurants} />
+          <YandexMap
+            restaurants={restaurants}
+            onSelectRestaurant={(restaurant) => {
+              if (restaurant?.id != null) {
+                navigate(`/restaurants/${restaurant.id}/menu`, {
+                  state: { restaurantName: restaurant.name },
+                });
+              }
+            }}
+          />
         </>
       )}
     </section>

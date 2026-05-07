@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -28,8 +28,8 @@ vi.mock('../../services/orderApi.js', () => ({
   createOrder: (...args) => mockCreateOrder(...args),
 }));
 
-function renderCartPage() {
-  mockUseAuth.mockReturnValue({ user: { id: 1, role: 'USER' } });
+function renderCartPage(user = { id: 1, role: 'USER' }) {
+  mockUseAuth.mockReturnValue({ user });
   return render(
     <MemoryRouter initialEntries={['/cart']}>
       <Routes>
@@ -57,6 +57,12 @@ describe('CartPage', () => {
     renderCartPage();
     await waitFor(() => expect(screen.getByRole('alert')).toBeInTheDocument());
     expect(screen.getByText('Backend недоступен')).toBeInTheDocument();
+  });
+
+  it('shows error state when user id is missing', async () => {
+    renderCartPage(null);
+    await waitFor(() => expect(screen.getByRole('alert')).toBeInTheDocument());
+    expect(mockFetchCart).not.toHaveBeenCalled();
   });
 
   it('updates and removes cart items', async () => {
@@ -90,6 +96,52 @@ describe('CartPage', () => {
 
     await userEvent.click(screen.getByRole('button', { name: 'Удалить' }));
     expect(mockRemoveCartItem).toHaveBeenCalledWith(1, 11);
+  });
+
+  it('decrements quantity, clears cart and shows item action errors', async () => {
+    mockFetchCart.mockResolvedValueOnce({
+      userId: 1,
+      restaurantId: 2,
+      totalAmount: 700,
+      items: [{ id: 11, menuItemId: 101, quantity: 2, name: 'Burger', price: 350 }],
+    });
+    mockUpdateCartItemQuantity.mockRejectedValueOnce(new Error('Quantity error'));
+    mockClearCart.mockResolvedValueOnce({
+      userId: 1,
+      restaurantId: 2,
+      totalAmount: 0,
+      items: [],
+    });
+
+    renderCartPage();
+    await waitFor(() => expect(screen.getByText('Burger')).toBeInTheDocument());
+
+    await userEvent.click(screen.getByRole('button', { name: '−' }));
+    await waitFor(() => expect(screen.getByText('Quantity error')).toBeInTheDocument());
+    expect(mockUpdateCartItemQuantity).toHaveBeenCalledWith(1, 11, 1);
+
+    await userEvent.click(screen.getByRole('button', { name: 'Очистить корзину' }));
+    await waitFor(() => expect(screen.getByText('Корзина пуста.')).toBeInTheDocument());
+  });
+
+  it('validates checkout fields before sending order', async () => {
+    mockFetchCart.mockResolvedValueOnce({
+      userId: 1,
+      restaurantId: 2,
+      totalAmount: 700,
+      items: [{ id: 11, menuItemId: 101, quantity: 2, name: 'Burger', price: 350 }],
+    });
+
+    renderCartPage();
+    await waitFor(() => expect(screen.getByText('Burger')).toBeInTheDocument());
+
+    fireEvent.submit(screen.getByRole('button', { name: 'Оформить заказ' }).closest('form'));
+    await waitFor(() => expect(screen.getByRole('alert')).toBeInTheDocument());
+    expect(mockCreateOrder).not.toHaveBeenCalled();
+
+    await userEvent.type(screen.getByPlaceholderText('ул. Пример, д. 1'), 'Lenina 10');
+    fireEvent.submit(screen.getByRole('button', { name: 'Оформить заказ' }).closest('form'));
+    expect(mockCreateOrder).not.toHaveBeenCalled();
   });
 
   it('places order successfully and navigates to orders page', async () => {

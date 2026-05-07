@@ -64,6 +64,14 @@ export async function fetchAdminOrders() {
   return data;
 }
 
+export async function fetchAdminStats() {
+  const data = await fetchApiSuccess('/api/admin/stats');
+  if (data == null || typeof data !== 'object' || Array.isArray(data)) {
+    throw new Error('Expected admin stats object in data');
+  }
+  return data;
+}
+
 export async function fetchAdminCourierReviews() {
   const data = await fetchApiSuccess('/api/admin/courier-reviews');
   if (!Array.isArray(data)) {

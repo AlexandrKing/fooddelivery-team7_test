@@ -7,6 +7,7 @@ import com.team7.persistence.UserJpaRepository;
 import com.team7.persistence.entity.AppAccountEntity;
 import com.team7.persistence.entity.AppRole;
 import com.team7.persistence.entity.CourierAssignedOrderEntity;
+import com.team7.persistence.entity.CourierTransactionEntity;
 import com.team7.persistence.entity.OrderEntity;
 import com.team7.repository.client.UserSecurityRepository;
 import com.team7.service.admin.AdminService;
@@ -18,6 +19,7 @@ import com.team7.service.client.RestaurantService;
 import com.team7.service.courier.CourierService;
 import com.team7.service.restaurant.RestaurantManagementService;
 import org.junit.jupiter.api.Test;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -27,11 +29,13 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
 import static org.mockito.BDDMockito.given;
+import static org.mockito.ArgumentMatchers.any;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
@@ -192,6 +196,41 @@ class CourierControllerIntegrationTest {
     mockMvc.perform(get("/api/courier/orders/assigned").with(user("courier@test.local").roles("COURIER")))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.message").value("Courier profile is not linked"));
+  }
+
+  @Test
+  void balanceAndTransactionsReturnCourierFinancialData() throws Exception {
+    mockCourierPrincipal("courier@test.local", 9L);
+    CourierTransactionEntity transaction = new CourierTransactionEntity();
+    transaction.setId(1L);
+    transaction.setCourierId(9L);
+    transaction.setOrderId(101L);
+    transaction.setAmount(BigDecimal.valueOf(100.00));
+    transaction.setType("DELIVERY_FEE");
+    transaction.setCreatedAt(LocalDateTime.now());
+    given(courierService.getBalance(9L)).willReturn(BigDecimal.valueOf(100.00));
+    given(courierService.getTransactions(org.mockito.ArgumentMatchers.eq(9L), any()))
+        .willReturn(new PageImpl<>(List.of(transaction)));
+    given(courierService.getStats(9L)).willReturn(new CourierService.CourierStats(
+        BigDecimal.valueOf(100.00),
+        BigDecimal.valueOf(100.00),
+        BigDecimal.valueOf(300.00)
+    ));
+
+    mockMvc.perform(get("/api/courier/me/balance").with(user("courier@test.local").roles("COURIER")))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.data.balance").value(100.0));
+
+    mockMvc.perform(get("/api/courier/me/transactions?page=0&size=10").with(user("courier@test.local").roles("COURIER")))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.data.content[0].orderId").value(101))
+        .andExpect(jsonPath("$.data.content[0].amount").value(100.0))
+        .andExpect(jsonPath("$.data.page").value(0));
+
+    mockMvc.perform(get("/api/courier/me/stats").with(user("courier@test.local").roles("COURIER")))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.data.earnedToday").value(100.0))
+        .andExpect(jsonPath("$.data.earnedThisWeek").value(300.0));
   }
 
   private void mockCourierPrincipal(String email, Long courierId) {

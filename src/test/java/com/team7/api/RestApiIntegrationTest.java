@@ -3,6 +3,7 @@ package com.team7.api;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.team7.persistence.AppAccountJpaRepository;
 import com.team7.persistence.AdminUserJpaRepository;
+import com.team7.persistence.AddressJpaRepository;
 import com.team7.persistence.CourierUserJpaRepository;
 import com.team7.persistence.UserJpaRepository;
 import com.team7.persistence.entity.AppAccountEntity;
@@ -74,6 +75,9 @@ class RestApiIntegrationTest {
 
   @MockitoBean
   private UserJpaRepository userJpaRepository;
+
+  @MockitoBean
+  private AddressJpaRepository addressJpaRepository;
 
   @MockitoBean
   private AdminUserJpaRepository adminUserJpaRepository;
@@ -407,6 +411,39 @@ class RestApiIntegrationTest {
         .andExpect(status().isForbidden());
   }
 
+  @Test
+  @WithMockUser(username = "user@test.local", roles = "USER")
+  void userProfileMeReturnsAndUpdatesProfile() throws Exception {
+    AppAccountEntity account = account("user@test.local", AppRole.USER, 1L, null, null, null);
+    UserEntity userEntity = new UserEntity();
+    userEntity.setId(1L);
+    userEntity.setFullName("Test User");
+    userEntity.setEmail("user@test.local");
+    userEntity.setPhone("+79990000001");
+    given(appAccountJpaRepository.findByEmail("user@test.local")).willReturn(java.util.Optional.of(account));
+    given(userJpaRepository.findById(1L)).willReturn(java.util.Optional.of(userEntity));
+    given(addressJpaRepository.findByUserIdOrderByIdAsc(1L)).willReturn(List.of());
+    given(userJpaRepository.save(any(UserEntity.class))).willAnswer(invocation -> invocation.getArgument(0));
+
+    mockMvc.perform(get("/api/users/me").with(user("user@test.local").roles("USER")))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.data.fullName").value("Test User"))
+        .andExpect(jsonPath("$.data.email").value("user@test.local"));
+
+    mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put("/api/users/me")
+            .with(user("user@test.local").roles("USER"))
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(Map.of(
+                "fullName", "Updated User",
+                "phone", "+79990000002",
+                "email", "ignored@test.local"
+            ))))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.data.fullName").value("Updated User"))
+        .andExpect(jsonPath("$.data.phone").value("+79990000002"))
+        .andExpect(jsonPath("$.data.email").value("user@test.local"));
+  }
+
   private static AppAccountEntity account(
       String email,
       AppRole role,
@@ -430,4 +467,3 @@ class RestApiIntegrationTest {
     return e;
   }
 }
-

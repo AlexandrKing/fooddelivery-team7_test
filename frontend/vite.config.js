@@ -12,6 +12,9 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: './src/test/setupTests.js',
     css: true,
+    coverage: {
+      reporter: ['text', 'html', 'json-summary', 'json'],
+    },
   },
   server: {
     port: 5173,

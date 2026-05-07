@@ -9,6 +9,7 @@ import com.team7.model.client.PaymentMethod;
 import com.team7.persistence.CourierAssignedOrderJpaRepository;
 import com.team7.persistence.entity.CourierAssignedOrderEntity;
 import com.team7.repository.client.OrderRepository;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -40,7 +41,12 @@ class OrderServiceImplTest {
 
   @BeforeEach
   void setUp() {
-    service = new OrderServiceImpl(cartService, orderRepository, courierAssignedOrderJpaRepository);
+    service = new OrderServiceImpl(
+        cartService,
+        orderRepository,
+        courierAssignedOrderJpaRepository,
+        new SimpleMeterRegistry()
+    );
   }
 
   @Test

@@ -7,6 +7,7 @@ import com.team7.persistence.UserJpaRepository;
 import com.team7.persistence.entity.AppAccountEntity;
 import com.team7.persistence.entity.AppRole;
 import com.team7.persistence.entity.OrderEntity;
+import com.team7.api.dto.admin.AdminDtos;
 import com.team7.repository.client.UserSecurityRepository;
 import com.team7.service.admin.AdminService;
 import com.team7.service.client.AuthService;
@@ -26,8 +27,10 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 import static org.mockito.BDDMockito.given;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
@@ -68,6 +71,33 @@ class AdminControllerIntegrationTest {
     mockMvc.perform(get("/api/admin/orders").with(user("c@test").roles("COURIER")))
         .andExpect(status().isForbidden());
     mockMvc.perform(get("/api/admin/orders").with(user("r@test").roles("RESTAURANT")))
+        .andExpect(status().isForbidden());
+  }
+
+  @Test
+  void adminStatsAllowsOnlyAdmin() throws Exception {
+    given(adminService.getStats()).willReturn(new AdminDtos.AdminStatsResponse(
+        3L,
+        2L,
+        4L,
+        5L,
+        BigDecimal.valueOf(600.00),
+        Map.of("DELIVERED", 2L, "PENDING", 3L)
+    ));
+
+    mockMvc.perform(get("/api/admin/stats").with(user("admin@test").roles("ADMIN")))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.data.totalUsers").value(3))
+        .andExpect(jsonPath("$.data.totalCouriers").value(2))
+        .andExpect(jsonPath("$.data.totalRestaurants").value(4))
+        .andExpect(jsonPath("$.data.totalOrders").value(5))
+        .andExpect(jsonPath("$.data.totalPaidToCouriers").value(600.0))
+        .andExpect(jsonPath("$.data.ordersByStatus.DELIVERED").value(2))
+        .andExpect(jsonPath("$.data.ordersByStatus.PENDING").value(3));
+
+    mockMvc.perform(get("/api/admin/stats").with(user("u@test").roles("USER")))
+        .andExpect(status().isForbidden());
+    mockMvc.perform(get("/api/admin/stats").with(user("c@test").roles("COURIER")))
         .andExpect(status().isForbidden());
   }
 

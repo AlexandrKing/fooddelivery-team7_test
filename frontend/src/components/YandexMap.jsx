@@ -25,7 +25,6 @@ function toPoint(restaurant) {
 
 export default function YandexMap({ restaurants = [], onSelectRestaurant }) {
   const apiKey = import.meta.env.VITE_YANDEX_MAPS_API_KEY;
-  console.log('API Key used:', import.meta.env.VITE_YANDEX_MAPS_API_KEY);
   const mapRef = useRef(null);
   const placemarkSetRef = useRef(new WeakSet());
   const points = useMemo(() => restaurants.map(toPoint).filter(Boolean), [restaurants]);
@@ -69,8 +68,13 @@ export default function YandexMap({ restaurants = [], onSelectRestaurant }) {
           });
         }
       });
+      placemarkInstance.events.add('click', () => {
+        if (typeof onSelectRestaurant === 'function') {
+          onSelectRestaurant(point.restaurant);
+        }
+      });
     },
-    [bindBalloonButton]
+    [bindBalloonButton, onSelectRestaurant]
   );
 
   useEffect(() => {
@@ -99,8 +103,6 @@ export default function YandexMap({ restaurants = [], onSelectRestaurant }) {
       duration: 250,
     });
   }, [points]);
-
-  console.log('Restaurants on map:', restaurants);
 
   return (
     <section className="yandex-map-section">

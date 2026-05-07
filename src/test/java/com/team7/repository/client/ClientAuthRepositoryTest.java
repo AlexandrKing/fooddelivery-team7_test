@@ -16,6 +16,7 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
+import static org.mockito.ArgumentMatchers.argThat;
 
 class ClientAuthRepositoryTest {
 
@@ -53,6 +54,35 @@ class ClientAuthRepositoryTest {
   }
 
   @Test
+  void findByEmailLoadsUserAndAddresses() {
+    UserEntity ue = new UserEntity();
+    ue.setId(2L);
+    ue.setFullName("Email User");
+    ue.setEmail("email@test");
+    ue.setPhone("+70000000002");
+    given(userJpaRepository.findByEmail("email@test")).willReturn(Optional.of(ue));
+    AddressEntity ae = new AddressEntity();
+    ae.setId(6L);
+    ae.setUserId(2L);
+    ae.setLabel("work");
+    ae.setAddress("office");
+    ae.setApartment("9");
+    given(addressJpaRepository.findByUserIdOrderByIdAsc(2L)).willReturn(List.of(ae));
+
+    User u = repo.findByEmail("email@test");
+
+    assertNotNull(u);
+    assertEquals(2L, u.getId());
+    assertEquals("Email User", u.getName());
+    assertEquals("email@test", u.getEmail());
+    assertEquals("+70000000002", u.getPhone());
+    assertEquals(1, u.getAddresses().size());
+    assertEquals("work", u.getAddresses().get(0).getLabel());
+    assertEquals("office", u.getAddresses().get(0).getAddress());
+    assertEquals("9", u.getAddresses().get(0).getApartment());
+  }
+
+  @Test
   void findByIdLoadsAddresses() {
     UserEntity ue = new UserEntity();
     ue.setId(1L);
@@ -74,6 +104,44 @@ class ClientAuthRepositoryTest {
   }
 
   @Test
+  void findByIdReturnsNullWhenMissing() {
+    given(userJpaRepository.findById(404L)).willReturn(Optional.empty());
+    assertNull(repo.findById(404L));
+  }
+
+  @Test
+  void countMethodsDelegateToJpaRepositories() {
+    given(userJpaRepository.countByEmail("a@test")).willReturn(2L);
+    given(userJpaRepository.countByPhone("+7")).willReturn(3L);
+
+    assertEquals(2, repo.countByEmail("a@test"));
+    assertEquals(3, repo.countByPhone("+7"));
+  }
+
+  @Test
+  void updateProfileUpdatesExistingUser() {
+    UserEntity entity = new UserEntity();
+    entity.setId(7L);
+    entity.setFullName("Old");
+    entity.setEmail("old@test");
+    entity.setPhone("+7000");
+    given(userJpaRepository.findById(7L)).willReturn(Optional.of(entity));
+
+    User user = new User();
+    user.setId(7L);
+    user.setName("New");
+    user.setEmail("new@test");
+    user.setPhone("+7111");
+
+    assertEquals(1, repo.updateProfile(user));
+    verify(userJpaRepository).save(argThat(saved ->
+        "New".equals(saved.getFullName())
+            && "new@test".equals(saved.getEmail())
+            && "+7111".equals(saved.getPhone())
+    ));
+  }
+
+  @Test
   void updateProfileReturns0WhenUserMissing() {
     User u = new User();
     u.setId(99L);
@@ -85,6 +153,24 @@ class ClientAuthRepositoryTest {
   void updatePasswordReturns0WhenUserMissing() {
     given(userJpaRepository.findById(99L)).willReturn(Optional.empty());
     assertEquals(0, repo.updatePassword(99L, "h"));
+  }
+
+  @Test
+  void findAndUpdatePasswordForExistingUser() {
+    UserEntity entity = new UserEntity();
+    entity.setId(8L);
+    entity.setPassword("oldHash");
+    given(userJpaRepository.findById(8L)).willReturn(Optional.of(entity));
+
+    assertEquals("oldHash", repo.findPasswordByUserId(8L));
+    assertEquals(1, repo.updatePassword(8L, "newHash"));
+    verify(userJpaRepository).save(argThat(saved -> "newHash".equals(saved.getPassword())));
+  }
+
+  @Test
+  void findPasswordReturnsNullWhenUserMissing() {
+    given(userJpaRepository.findById(404L)).willReturn(Optional.empty());
+    assertNull(repo.findPasswordByUserId(404L));
   }
 
   @Test

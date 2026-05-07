@@ -26,8 +26,8 @@ vi.mock('../../services/courierReviewApi.js', () => ({
   createCourierReview: (...args) => mockCreateCourierReview(...args),
 }));
 
-function renderPage() {
-  mockUseAuth.mockReturnValue({ user: { id: 1, role: 'USER' } });
+function renderPage(user = { id: 1, role: 'USER' }) {
+  mockUseAuth.mockReturnValue({ user });
   return render(
     <MemoryRouter>
       <OrderHistoryPage />
@@ -55,6 +55,12 @@ describe('OrderHistoryPage', () => {
     expect(screen.getByText('Ошибка загрузки')).toBeInTheDocument();
   });
 
+  it('shows error when current user id is unavailable', async () => {
+    renderPage(null);
+    await waitFor(() => expect(screen.getByRole('alert')).toBeInTheDocument());
+    expect(mockFetchUserOrders).not.toHaveBeenCalled();
+  });
+
   it('renders orders and supports loading details', async () => {
     mockFetchUserOrders.mockResolvedValueOnce([
       { id: 101, status: 'PENDING', totalAmount: 700, createdAt: '2026-01-01T10:00:00', deliveryType: 'DELIVERY', deliveryAddress: 'Lenina 1' },
@@ -68,6 +74,77 @@ describe('OrderHistoryPage', () => {
     await waitFor(() => expect(screen.getByText('Заказ #101')).toBeInTheDocument());
     await userEvent.click(screen.getByRole('button', { name: 'Показать позиции' }));
     await waitFor(() => expect(screen.getByText('Burger · 2 × 350 ₽')).toBeInTheDocument());
+  });
+
+  it('handles details load failure and empty details list', async () => {
+    mockFetchUserOrders.mockResolvedValueOnce([
+      { id: 301, status: 'DELIVERED', totalAmount: 'bad', createdAt: 'bad-date', deliveryType: 'PICKUP', deliveryAddress: '' },
+    ]);
+    mockFetchOrder
+      .mockRejectedValueOnce(new Error('Details failed'))
+      .mockResolvedValueOnce({ id: 301, items: [] });
+    renderPage();
+
+    await waitFor(() => expect(screen.getByText('Заказ #301')).toBeInTheDocument());
+    await userEvent.click(screen.getByRole('button', { name: 'Показать позиции' }));
+    await waitFor(() => expect(screen.getByText('Details failed')).toBeInTheDocument());
+
+    await userEvent.click(screen.getByRole('button', { name: 'Показать позиции' }));
+    await waitFor(() => expect(screen.getByText('Позиции не найдены.')).toBeInTheDocument());
+  });
+
+  it('creates courier review and hides form after success', async () => {
+    mockFetchUserOrders.mockResolvedValueOnce([
+      {
+        id: 401,
+        status: 'DELIVERED',
+        totalAmount: 900,
+        createdAt: '2026-01-01T10:00:00',
+        deliveryType: 'DELIVERY',
+        deliveryAddress: 'Lenina 1',
+        courierId: 5,
+      },
+    ]);
+    mockCreateCourierReview.mockResolvedValueOnce({ id: 20, orderId: 401 });
+    renderPage();
+
+    await waitFor(() => expect(screen.getByText('Заказ #401')).toBeInTheDocument());
+    await userEvent.click(screen.getByRole('button', { name: 'Оставить отзыв' }));
+    await userEvent.selectOptions(screen.getByLabelText('Оценка (1–5)'), '4');
+    await userEvent.type(screen.getByLabelText('Комментарий'), 'Good delivery');
+    await userEvent.click(screen.getByRole('button', { name: 'Отправить' }));
+
+    await waitFor(() =>
+      expect(screen.getByText('Отзыв на курьера оставлен')).toBeInTheDocument()
+    );
+    expect(mockCreateCourierReview).toHaveBeenCalledWith({
+      orderId: 401,
+      rating: 4,
+      comment: 'Good delivery',
+    });
+  });
+
+  it('shows review submit error and allows cancelling review form', async () => {
+    mockFetchUserOrders.mockResolvedValueOnce([
+      {
+        id: 402,
+        status: 'DELIVERED',
+        totalAmount: 900,
+        createdAt: '2026-01-01T10:00:00',
+        deliveryType: 'DELIVERY',
+        deliveryAddress: 'Lenina 1',
+        courierId: 5,
+      },
+    ]);
+    mockCreateCourierReview.mockRejectedValueOnce(new Error('Review failed'));
+    renderPage();
+
+    await waitFor(() => expect(screen.getByText('Заказ #402')).toBeInTheDocument());
+    await userEvent.click(screen.getByRole('button', { name: 'Оставить отзыв' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Отправить' }));
+    await waitFor(() => expect(screen.getByText('Review failed')).toBeInTheDocument());
+    await userEvent.click(screen.getByRole('button', { name: 'Отмена' }));
+    expect(screen.queryByText('Отзыв о курьере')).not.toBeInTheDocument();
   });
 
   it('handles cancel action and updates UI', async () => {

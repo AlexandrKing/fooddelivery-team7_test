@@ -52,6 +52,47 @@ export async function fetchAvailableCourierOrders() {
   return data;
 }
 
+export async function fetchCourierBalance() {
+  const data = await fetchApiSuccess('/api/courier/me/balance');
+  if (data == null || typeof data !== 'object' || Array.isArray(data)) {
+    throw new Error('Ожидался объект баланса курьера в data');
+  }
+  return data;
+}
+
+export async function fetchCourierTransactions({ page = 0, size = 10 } = {}) {
+  const search = new URLSearchParams({
+    page: String(page),
+    size: String(size),
+  });
+  const data = await fetchApiSuccess(`/api/courier/me/transactions?${search.toString()}`);
+  if (Array.isArray(data)) {
+    return {
+      content: data,
+      page: 0,
+      size: data.length,
+      totalElements: data.length,
+      totalPages: 1,
+      last: true,
+    };
+  }
+  if (data != null && typeof data === 'object' && Array.isArray(data.content)) {
+    return data;
+  }
+  if (!Array.isArray(data)) {
+    throw new Error('Ожидался массив транзакций курьера в data');
+  }
+  return data;
+}
+
+export async function fetchCourierStats() {
+  const data = await fetchApiSuccess('/api/courier/me/stats');
+  if (data == null || typeof data !== 'object' || Array.isArray(data)) {
+    throw new Error('Expected courier stats object in data');
+  }
+  return data;
+}
+
 export async function claimCourierOrder(orderId) {
   const data = await fetchApiSuccess(`/api/courier/orders/${encodeId(orderId)}/claim`, {
     method: 'POST',
@@ -73,4 +114,3 @@ export async function updateCourierOrderStatus(orderId, status) {
   }
   return data;
 }
-

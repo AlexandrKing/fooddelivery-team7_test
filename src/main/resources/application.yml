@@ -36,6 +36,9 @@ legacy:
   console:
     enabled: false
 
+app:
+  delivery-fee: 100.00
+
 management:
   endpoints:
     web:

@@ -51,6 +51,9 @@ export default function AppHeader() {
                     <NavLink to="/orders" className={navLinkClass}>
                       Заказы
                     </NavLink>
+                    <NavLink to="/profile" className={navLinkClass}>
+                      Профиль
+                    </NavLink>
                     <NavLink to="/cart" className={navLinkClass}>
                       Корзина
                     </NavLink>

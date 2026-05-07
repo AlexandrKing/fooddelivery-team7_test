@@ -6,6 +6,7 @@ import AdminDashboardPage from '../AdminDashboardPage.jsx';
 const mockFetchAdminAccounts = vi.fn();
 const mockSetAdminAccountActive = vi.fn();
 const mockFetchAdminOrders = vi.fn();
+const mockFetchAdminStats = vi.fn();
 const mockFetchAdminCourierReviews = vi.fn();
 const mockDeleteAdminCourierReview = vi.fn();
 
@@ -13,6 +14,7 @@ vi.mock('../../services/adminApi.js', () => ({
   fetchAdminAccounts: (...args) => mockFetchAdminAccounts(...args),
   setAdminAccountActive: (...args) => mockSetAdminAccountActive(...args),
   fetchAdminOrders: (...args) => mockFetchAdminOrders(...args),
+  fetchAdminStats: (...args) => mockFetchAdminStats(...args),
   fetchAdminCourierReviews: (...args) => mockFetchAdminCourierReviews(...args),
   deleteAdminCourierReview: (...args) => mockDeleteAdminCourierReview(...args),
 }));
@@ -21,6 +23,14 @@ describe('AdminDashboardPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.spyOn(window, 'confirm').mockReturnValue(true);
+    mockFetchAdminStats.mockResolvedValue({
+      totalUsers: 0,
+      totalCouriers: 0,
+      totalRestaurants: 0,
+      totalOrders: 0,
+      totalPaidToCouriers: 0,
+      ordersByStatus: {},
+    });
   });
 
   it('shows loading then empty states', async () => {

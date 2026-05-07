@@ -7,6 +7,8 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
+import java.math.BigDecimal;
+
 @Entity
 @Table(name = "courier_users")
 public class CourierUserEntity {
@@ -32,6 +34,9 @@ public class CourierUserEntity {
 
   @Column(name = "status")
   private String status;
+
+  @Column(name = "balance")
+  private BigDecimal balance;
 
   @Column(name = "is_active")
   private Boolean isActive;
@@ -90,6 +95,14 @@ public class CourierUserEntity {
 
   public void setStatus(String status) {
     this.status = status;
+  }
+
+  public BigDecimal getBalance() {
+    return balance;
+  }
+
+  public void setBalance(BigDecimal balance) {
+    this.balance = balance;
   }
 
   public Boolean getIsActive() {

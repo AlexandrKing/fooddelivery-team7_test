@@ -6,6 +6,7 @@ import com.team7.persistence.AppAccountJpaRepository;
 import com.team7.persistence.entity.AppAccountEntity;
 import com.team7.repository.client.ClientAuthRepository;
 import com.team7.service.telegramnotificationservice.TelegramNotificationService;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -48,7 +49,8 @@ class AuthServiceImplTest {
         authRepository,
         appAccountJpaRepository,
         passwordEncoder,
-        telegramNotificationService
+        telegramNotificationService,
+        new SimpleMeterRegistry()
     );
   }
 

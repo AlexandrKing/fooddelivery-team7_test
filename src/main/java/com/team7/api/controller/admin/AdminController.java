@@ -42,6 +42,11 @@ public class AdminController {
     return ApiSuccessResponse.of(adminService.getOrders().stream().map(this::toOrderResponse).toList());
   }
 
+  @GetMapping("/stats")
+  public ApiSuccessResponse<AdminDtos.AdminStatsResponse> stats() {
+    return ApiSuccessResponse.of(adminService.getStats());
+  }
+
   private AdminDtos.AccountResponse toAccountResponse(AppAccountEntity e) {
     return new AdminDtos.AccountResponse(
         e.getId(),

@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import RestaurantDashboardPage from '../RestaurantDashboardPage.jsx';
@@ -104,5 +104,78 @@ describe('RestaurantDashboardPage', () => {
     await userEvent.type(screen.getByLabelText('Цена'), '350');
     await userEvent.click(screen.getByRole('button', { name: 'Добавить блюдо' }));
     await waitFor(() => expect(screen.getByText('Dish not found')).toBeInTheDocument());
+  });
+
+  it('supports editing and deleting menu dishes', async () => {
+    mockFetchRestaurantOrders.mockResolvedValueOnce([
+      { id: 77, userId: 1, status: 'PENDING', totalAmount: Number.NaN, createdAt: 'bad-date' },
+    ]);
+    mockFetchRestaurantMenu.mockResolvedValueOnce([
+      {
+        id: 11,
+        name: '',
+        description: 'Old description',
+        price: 200,
+        category: '',
+        available: false,
+        calories: 100,
+        imageUrl: 'old.jpg',
+        preparationTimeMin: 15,
+      },
+    ]);
+    mockUpdateRestaurantDish.mockResolvedValueOnce({
+      id: 11,
+      name: 'Updated Dish',
+      description: 'New description',
+      price: 250,
+      category: 'Soup',
+      available: true,
+      calories: 120,
+      imageUrl: 'new.jpg',
+      preparationTimeMin: 20,
+    });
+    mockDeleteRestaurantDish.mockResolvedValueOnce();
+
+    render(<RestaurantDashboardPage />);
+    await waitFor(() => expect(screen.getByText('Блюдо #11')).toBeInTheDocument());
+    expect(screen.getByText('Old description')).toBeInTheDocument();
+    expect(screen.getByText(/bad-date/)).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Редактировать' }));
+    await userEvent.clear(screen.getAllByLabelText('Название')[1]);
+    await userEvent.type(screen.getAllByLabelText('Название')[1], 'Updated Dish');
+    await userEvent.clear(screen.getAllByLabelText('Цена')[1]);
+    await userEvent.type(screen.getAllByLabelText('Цена')[1], '250');
+    await userEvent.click(screen.getByRole('button', { name: 'Сохранить' }));
+
+    await waitFor(() => expect(screen.getByText('Updated Dish')).toBeInTheDocument());
+    expect(mockUpdateRestaurantDish).toHaveBeenCalledWith(11, expect.objectContaining({
+      name: 'Updated Dish',
+      price: 250,
+    }));
+
+    await userEvent.click(screen.getByRole('button', { name: 'Удалить' }));
+    await waitFor(() => expect(screen.queryByText('Updated Dish')).not.toBeInTheDocument());
+    expect(mockDeleteRestaurantDish).toHaveBeenCalledWith(11);
+  });
+
+  it('validates dish forms and shows delete errors', async () => {
+    mockFetchRestaurantOrders.mockResolvedValueOnce([]);
+    mockFetchRestaurantMenu.mockResolvedValueOnce([
+      { id: 12, name: 'Dish', price: 200, category: 'Main', available: true },
+    ]);
+    mockDeleteRestaurantDish.mockRejectedValueOnce(new Error('Delete failed'));
+
+    render(<RestaurantDashboardPage />);
+    await waitFor(() => expect(screen.getByText('Dish')).toBeInTheDocument());
+
+    await userEvent.type(screen.getByLabelText('Название'), 'Invalid Dish');
+    await userEvent.type(screen.getByLabelText('Цена'), '-1');
+    fireEvent.submit(screen.getByRole('button', { name: 'Добавить блюдо' }).closest('form'));
+    await waitFor(() => expect(screen.getByRole('alert')).toBeInTheDocument());
+    expect(mockCreateRestaurantDish).not.toHaveBeenCalled();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Удалить' }));
+    await waitFor(() => expect(screen.getByText('Delete failed')).toBeInTheDocument());
   });
 });

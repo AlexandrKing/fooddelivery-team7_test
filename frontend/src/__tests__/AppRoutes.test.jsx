@@ -17,6 +17,7 @@ vi.mock('../pages/RegistrationPage.jsx', () => ({ default: () => <div>Register p
 vi.mock('../pages/RestaurantsPage.jsx', () => ({ default: () => <div>Restaurants page</div> }));
 vi.mock('../pages/CartPage.jsx', () => ({ default: () => <div>Cart page</div> }));
 vi.mock('../pages/OrderHistoryPage.jsx', () => ({ default: () => <div>Orders page</div> }));
+vi.mock('../pages/UserProfilePage.jsx', () => ({ default: () => <div>Profile page</div> }));
 vi.mock('../pages/RestaurantMenuPage.jsx', () => ({ default: () => <div>Restaurant menu page</div> }));
 vi.mock('../pages/AdminDashboardPage.jsx', () => ({ default: () => <div>Admin page</div> }));
 vi.mock('../pages/CourierDashboardPage.jsx', () => ({ default: () => <div>Courier page</div> }));
@@ -45,6 +46,14 @@ describe('App routes', () => {
   it('renders protected route for allowed USER role', () => {
     renderApp('/orders', { isAuthenticated: true, role: 'USER', homeRoute: '/' });
     expect(screen.getByText('Orders page')).toBeInTheDocument();
+  });
+
+  it('renders user profile route and sends unauthenticated fallback to login', () => {
+    renderApp('/profile', { isAuthenticated: true, role: 'USER', homeRoute: '/' });
+    expect(screen.getByText('Profile page')).toBeInTheDocument();
+
+    renderApp('/unknown-path', { isAuthenticated: false, role: 'USER', homeRoute: '/' });
+    expect(screen.getByText('Login page')).toBeInTheDocument();
   });
 
   it('enforces role-specific route guard', () => {

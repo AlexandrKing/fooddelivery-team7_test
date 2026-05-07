@@ -11,6 +11,7 @@ import RegistrationPage from './pages/RegistrationPage.jsx';
 import RestaurantDashboardPage from './pages/RestaurantDashboardPage.jsx';
 import RestaurantsPage from './pages/RestaurantsPage.jsx';
 import RestaurantMenuPage from './pages/RestaurantMenuPage.jsx';
+import UserProfilePage from './pages/UserProfilePage.jsx';
 
 function RoleHomeFallback() {
   const { isAuthenticated, homeRoute } = useAuth();
@@ -49,6 +50,14 @@ export default function App() {
             element={
               <ProtectedRoute allowedRoles={['USER']}>
                 <OrderHistoryPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute allowedRoles={['USER']}>
+                <UserProfilePage />
               </ProtectedRoute>
             }
           />

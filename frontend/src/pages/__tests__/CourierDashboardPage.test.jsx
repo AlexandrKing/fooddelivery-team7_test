@@ -7,10 +7,16 @@ const mockFetchAssignedCourierOrders = vi.fn();
 const mockFetchAvailableCourierOrders = vi.fn();
 const mockClaimCourierOrder = vi.fn();
 const mockUpdateCourierOrderStatus = vi.fn();
+const mockFetchCourierBalance = vi.fn();
+const mockFetchCourierTransactions = vi.fn();
+const mockFetchCourierStats = vi.fn();
 
 vi.mock('../../services/courierApi.js', () => ({
   fetchAssignedCourierOrders: (...args) => mockFetchAssignedCourierOrders(...args),
   fetchAvailableCourierOrders: (...args) => mockFetchAvailableCourierOrders(...args),
+  fetchCourierBalance: (...args) => mockFetchCourierBalance(...args),
+  fetchCourierTransactions: (...args) => mockFetchCourierTransactions(...args),
+  fetchCourierStats: (...args) => mockFetchCourierStats(...args),
   claimCourierOrder: (...args) => mockClaimCourierOrder(...args),
   updateCourierOrderStatus: (...args) => mockUpdateCourierOrderStatus(...args),
 }));
@@ -18,6 +24,9 @@ vi.mock('../../services/courierApi.js', () => ({
 describe('CourierDashboardPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockFetchCourierBalance.mockResolvedValue({ balance: 0 });
+    mockFetchCourierTransactions.mockResolvedValue({ content: [], page: 0, size: 10, totalElements: 0, totalPages: 0, last: true });
+    mockFetchCourierStats.mockResolvedValue({ balance: 0, earnedToday: 0, earnedThisWeek: 0 });
   });
 
   it('renders loading then empty states for both lists', async () => {

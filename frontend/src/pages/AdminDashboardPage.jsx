@@ -4,6 +4,7 @@ import {
   fetchAdminAccounts,
   fetchAdminCourierReviews,
   fetchAdminOrders,
+  fetchAdminStats,
   setAdminAccountActive,
 } from '../services/adminApi.js';
 
@@ -24,9 +25,11 @@ export default function AdminDashboardPage() {
   const [accountsStatus, setAccountsStatus] = useState('loading');
   const [ordersStatus, setOrdersStatus] = useState('loading');
   const [reviewsStatus, setReviewsStatus] = useState('loading');
+  const [statsStatus, setStatsStatus] = useState('loading');
   const [accounts, setAccounts] = useState([]);
   const [orders, setOrders] = useState([]);
   const [courierReviews, setCourierReviews] = useState([]);
+  const [stats, setStats] = useState(null);
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [updatingAccountId, setUpdatingAccountId] = useState(null);
@@ -64,29 +67,35 @@ export default function AdminDashboardPage() {
       setAccountsStatus('loading');
       setOrdersStatus('loading');
       setReviewsStatus('loading');
+      setStatsStatus('loading');
       setError('');
       setSuccessMessage('');
       try {
-        const [accountsData, ordersData, reviewsData] = await Promise.all([
+        const [accountsData, ordersData, reviewsData, statsData] = await Promise.all([
           fetchAdminAccounts(),
           fetchAdminOrders(),
           fetchAdminCourierReviews(),
+          fetchAdminStats(),
         ]);
         if (cancelled) return;
         setAccounts(accountsData);
         setOrders(ordersData);
         setCourierReviews(reviewsData);
+        setStats(statsData);
         setAccountsStatus('success');
         setOrdersStatus('success');
         setReviewsStatus('success');
+        setStatsStatus('success');
       } catch (e) {
         if (cancelled) return;
         setAccountsStatus('error');
         setOrdersStatus('error');
         setReviewsStatus('error');
+        setStatsStatus('error');
         setAccounts([]);
         setOrders([]);
         setCourierReviews([]);
+        setStats(null);
         setError(e?.message || 'Не удалось загрузить админ-панель');
       }
     }
@@ -151,6 +160,62 @@ export default function AdminDashboardPage() {
           <p>{successMessage}</p>
         </div>
       )}
+
+      <section className="dashboard-block">
+        <h3>Summary</h3>
+        {statsStatus === 'loading' && (
+          <p className="state state--loading" aria-busy="true">
+            Загрузка статистики...
+          </p>
+        )}
+        {statsStatus === 'error' && (
+          <p className="state state--error">Не удалось загрузить статистику.</p>
+        )}
+        {statsStatus === 'success' && stats && (
+          <>
+            <ul className="order-list">
+              <li className="order-card">
+                <div className="order-card__head">
+                  <h3>Users</h3>
+                  <span className="badge">{stats.totalUsers ?? 0}</span>
+                </div>
+              </li>
+              <li className="order-card">
+                <div className="order-card__head">
+                  <h3>Couriers</h3>
+                  <span className="badge">{stats.totalCouriers ?? 0}</span>
+                </div>
+              </li>
+              <li className="order-card">
+                <div className="order-card__head">
+                  <h3>Restaurants</h3>
+                  <span className="badge">{stats.totalRestaurants ?? 0}</span>
+                </div>
+              </li>
+              <li className="order-card">
+                <div className="order-card__head">
+                  <h3>Orders</h3>
+                  <span className="badge">{stats.totalOrders ?? 0}</span>
+                </div>
+              </li>
+              <li className="order-card">
+                <div className="order-card__head">
+                  <h3>Paid to couriers</h3>
+                  <span className="badge">{asCurrency(stats.totalPaidToCouriers)}</span>
+                </div>
+              </li>
+            </ul>
+            {stats.ordersByStatus && Object.keys(stats.ordersByStatus).length > 0 && (
+              <p className="order-card__line">
+                Orders by status:{' '}
+                {Object.entries(stats.ordersByStatus)
+                  .map(([status, count]) => `${status}: ${count}`)
+                  .join(' · ')}
+              </p>
+            )}
+          </>
+        )}
+      </section>
 
       <section className="dashboard-block">
         <h3>Аккаунты</h3>
