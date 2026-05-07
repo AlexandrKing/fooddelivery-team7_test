@@ -26,9 +26,11 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -129,6 +131,47 @@ class ReviewControllerIntegrationTest {
             .content("{\"orderId\":999,\"rating\":5,\"comment\":\"dup\"}"))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.message").value("Отзыв по этому заказу уже оставлен"));
+  }
+
+  @Test
+  void courierReviewFallbackToUserJpaRepositoryWhenLinkedUserIdNull() throws Exception {
+    UserSecurityRepository.SecurityUserRecord rec =
+        new UserSecurityRepository.SecurityUserRecord(1L, "user@test", "h", "USER", null, null, null, null, true);
+    given(userSecurityRepository.findByEmail("user@test")).willReturn(rec);
+    com.team7.persistence.entity.UserEntity ue = new com.team7.persistence.entity.UserEntity();
+    ue.setId(42L);
+    given(userJpaRepository.findByEmail("user@test")).willReturn(Optional.of(ue));
+
+    CourierReviewDtos.CourierReviewResponse created = new CourierReviewDtos.CourierReviewResponse(
+        11L, 101L, 42L, 8L, 4, "ok", LocalDateTime.now()
+    );
+    given(courierReviewService.createCourierReview(42L, 101L, 4, "ok")).willReturn(created);
+
+    mockMvc.perform(post("/api/client/courier-reviews")
+            .with(user("user@test").roles("USER"))
+            .contentType(MediaType.APPLICATION_JSON)
+            .content("{\"orderId\":101,\"rating\":4,\"comment\":\"ok\"}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.data.userId").value(42));
+  }
+
+  @Test
+  void courierReviewReturnsErrorWhenPrincipalMissingOrBlank() throws Exception {
+    var auth = new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(
+        "", "n/a", java.util.List.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_USER"))
+    );
+    mockMvc.perform(get("/api/client/courier-reviews/mine").with(authentication(auth)))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.message").value("Пользователь не авторизован"));
+  }
+
+  @Test
+  void courierReviewReturnsErrorWhenSecurityRecordMissing() throws Exception {
+    given(userSecurityRepository.findByEmail("user@test")).willReturn(null);
+
+    mockMvc.perform(get("/api/client/courier-reviews/mine").with(user("user@test").roles("USER")))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.message").value("Учётная запись не найдена"));
   }
 
   @Test

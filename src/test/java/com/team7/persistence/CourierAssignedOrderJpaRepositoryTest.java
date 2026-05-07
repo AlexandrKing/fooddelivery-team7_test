@@ -15,7 +15,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @DataJpaTest
 @ActiveProfiles("test")
-class CourierAssignedOrderJpaRepositoryTest {
+class  CourierAssignedOrderJpaRepositoryTest {
 
   @Autowired
   private CourierAssignedOrderJpaRepository repository;

@@ -29,6 +29,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -220,6 +221,92 @@ class OrderControllerIntegrationTest {
                 + deliveryTime + "\",\"paymentMethod\":\"CARD\"}"))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.message").value("Доступ к заказу запрещён"));
+  }
+
+  @Test
+  void userOwnershipFallsBackToUserJpaRepositoryWhenLinkedUserIdMissing() throws Exception {
+    // rec.linkedUserId == null but role == USER -> resolve via userJpaRepository.findByEmail
+    given(userSecurityRepository.findByEmail("user@test.local")).willReturn(
+        new UserSecurityRepository.SecurityUserRecord(
+            1L,
+            "user@test.local",
+            "hash",
+            "USER",
+            null,
+            null,
+            null,
+            null,
+            true
+        )
+    );
+    com.team7.persistence.entity.UserEntity ue = new com.team7.persistence.entity.UserEntity();
+    ue.setId(1L);
+    given(userJpaRepository.findByEmail("user@test.local")).willReturn(Optional.of(ue));
+
+    LocalDateTime deliveryTime = LocalDateTime.now().plusHours(2);
+    given(orderService.createOrder(
+        eq(1L), eq(2L), eq("Lenina 10"), eq(DeliveryType.DELIVERY), any(LocalDateTime.class), eq(PaymentMethod.CARD)
+    )).willReturn(order(20L, 1L, 2L, OrderStatus.PENDING));
+
+    mockMvc.perform(post("/api/orders")
+            .with(user("user@test.local").roles("USER"))
+            .contentType(MediaType.APPLICATION_JSON)
+            .content("{\"userId\":1,\"restaurantId\":2,\"deliveryAddress\":\"Lenina 10\",\"deliveryType\":\"DELIVERY\",\"deliveryTime\":\""
+                + deliveryTime + "\",\"paymentMethod\":\"CARD\"}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.data.id").value(20));
+  }
+
+  @Test
+  void userOwnershipFailsWhenSecurityAccountMissing() throws Exception {
+    given(userSecurityRepository.findByEmail("user@test.local")).willReturn(null);
+    given(orderService.getOrder(77L)).willReturn(order(77L, 1L, 2L, OrderStatus.PENDING));
+
+    mockMvc.perform(get("/api/orders/77").with(user("user@test.local").roles("USER")))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.message").value("Учётная запись не найдена"));
+  }
+
+  @Test
+  void userOwnershipFailsWhenRoleIsNotUserAndLinkedUserIdMissing() throws Exception {
+    given(userSecurityRepository.findByEmail("user@test.local")).willReturn(
+        new UserSecurityRepository.SecurityUserRecord(
+            1L,
+            "user@test.local",
+            "hash",
+            "ADMIN",
+            null,
+            null,
+            null,
+            null,
+            true
+        )
+    );
+    given(orderService.getOrder(77L)).willReturn(order(77L, 1L, 2L, OrderStatus.PENDING));
+
+    mockMvc.perform(get("/api/orders/77").with(user("user@test.local").roles("USER")))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.message").value("Профиль пользователя не привязан к аккаунту"));
+  }
+
+  @Test
+  void nonUserRoleDoesNotEnforceOwnershipChecks() throws Exception {
+    // Courier role should skip enforceUserOwnership (isUserRole == false)
+    given(orderService.getOrder(77L)).willReturn(order(77L, 999L, 2L, OrderStatus.PENDING));
+
+    mockMvc.perform(get("/api/orders/77").with(user("courier@test.local").roles("COURIER")))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.data.id").value(77));
+  }
+
+  @Test
+  void runtimeExceptionIsReturnedAsInternalServerError() throws Exception {
+    given(orderService.getOrder(500L)).willThrow(new RuntimeException("Boom"));
+
+    mockMvc.perform(get("/api/orders/500").with(user("courier@test.local").roles("COURIER")))
+        .andExpect(status().isInternalServerError())
+        .andExpect(jsonPath("$.error").value("Internal Server Error"))
+        .andExpect(jsonPath("$.message").value("Boom"));
   }
 
   private static Order order(Long id, Long userId, Long restaurantId, OrderStatus status) {
