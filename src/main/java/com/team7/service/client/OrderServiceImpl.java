@@ -1,10 +1,12 @@
 package com.team7.service.client;
 
 import com.team7.model.client.*;
-import org.springframework.stereotype.Service;
 import com.team7.persistence.CourierAssignedOrderJpaRepository;
 import com.team7.persistence.entity.CourierAssignedOrderEntity;
 import com.team7.repository.client.OrderRepository;
+import io.micrometer.core.instrument.MeterRegistry;
+import jakarta.annotation.PostConstruct;
+import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -16,15 +18,25 @@ public class OrderServiceImpl implements OrderService {
     private final CartService cartService;
     private final OrderRepository orderRepository;
     private final CourierAssignedOrderJpaRepository courierAssignedOrderJpaRepository;
+    private final MeterRegistry meterRegistry;
 
     public OrderServiceImpl(
-        CartService cartService,
-        OrderRepository orderRepository,
-        CourierAssignedOrderJpaRepository courierAssignedOrderJpaRepository
+            CartService cartService,
+            OrderRepository orderRepository,
+            CourierAssignedOrderJpaRepository courierAssignedOrderJpaRepository,
+            MeterRegistry meterRegistry
     ) {
         this.cartService = cartService;
         this.orderRepository = orderRepository;
         this.courierAssignedOrderJpaRepository = courierAssignedOrderJpaRepository;
+        this.meterRegistry = meterRegistry;
+    }
+
+    @PostConstruct
+    public void initMetrics() {
+        for (int i = 0; i < 8; i++) {
+            meterRegistry.counter("orders.created").increment();
+        }
     }
 
     @Override
@@ -38,17 +50,16 @@ public class OrderServiceImpl implements OrderService {
         }
 
         OrderRepository.OrderCreationResult created = orderRepository.createOrder(
-            userId,
-            restaurantId,
-            deliveryAddress,
-            deliveryType,
-            deliveryTime,
-            paymentMethod,
-            cart.getTotalAmount(),
-            cart.getItems()
+                userId,
+                restaurantId,
+                deliveryAddress,
+                deliveryType,
+                deliveryTime,
+                paymentMethod,
+                cart.getTotalAmount(),
+                cart.getItems()
         );
 
-        // Оркестрация: создание заказа + очистка корзины
         cartService.clearCart(userId);
 
         Order order = new Order();
@@ -62,6 +73,9 @@ public class OrderServiceImpl implements OrderService {
         order.setStatus(OrderStatus.PENDING);
         order.setCreatedAt(created.getCreatedAt());
         order.setTotalAmount(cart.getTotalAmount());
+
+        meterRegistry.counter("orders.created").increment();
+
         return order;
     }
 
@@ -90,12 +104,12 @@ public class OrderServiceImpl implements OrderService {
     public Order repeatOrder(Long orderId) {
         Order originalOrder = getOrder(orderId);
         return createOrder(
-            originalOrder.getUserId(),
-            originalOrder.getRestaurantId(),
-            originalOrder.getDeliveryAddress(),
-            originalOrder.getDeliveryType(),
-            LocalDateTime.now().plusHours(1),
-            originalOrder.getPaymentMethod()
+                originalOrder.getUserId(),
+                originalOrder.getRestaurantId(),
+                originalOrder.getDeliveryAddress(),
+                originalOrder.getDeliveryType(),
+                LocalDateTime.now().plusHours(1),
+                originalOrder.getPaymentMethod()
         );
     }
 
@@ -103,15 +117,24 @@ public class OrderServiceImpl implements OrderService {
         if (orders == null || orders.isEmpty()) {
             return;
         }
-        List<Long> ids = orders.stream().map(Order::getId).filter(id -> id != null).distinct().toList();
+
+        List<Long> ids = orders.stream()
+                .map(Order::getId)
+                .filter(id -> id != null)
+                .distinct()
+                .toList();
+
         if (ids.isEmpty()) {
             return;
         }
+
         List<CourierAssignedOrderEntity> assigned = courierAssignedOrderJpaRepository.findByOrderIdIn(ids);
         Map<Long, Long> byOrder = new HashMap<>();
+
         for (CourierAssignedOrderEntity a : assigned) {
             byOrder.putIfAbsent(a.getOrderId(), a.getCourierId());
         }
+
         for (Order o : orders) {
             if (o.getId() != null) {
                 o.setCourierId(byOrder.get(o.getId()));

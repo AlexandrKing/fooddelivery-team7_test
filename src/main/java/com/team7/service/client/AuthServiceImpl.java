@@ -7,12 +7,16 @@ import com.team7.persistence.entity.AppAccountEntity;
 import com.team7.persistence.entity.AppRole;
 import com.team7.repository.client.ClientAuthRepository;
 import com.team7.service.telegramnotificationservice.TelegramNotificationService;
+import io.micrometer.core.instrument.MeterRegistry;
+import jakarta.annotation.PostConstruct;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.time.LocalDateTime;
 import java.util.regex.Pattern;
+
+
 
 @Service
 public class AuthServiceImpl implements AuthService {
@@ -25,15 +29,27 @@ public class AuthServiceImpl implements AuthService {
     private final AppAccountJpaRepository appAccountJpaRepository;
     private final PasswordEncoder passwordEncoder;
     private final TelegramNotificationService telegramNotificationService;
+    private final MeterRegistry meterRegistry;
 
     public AuthServiceImpl(ClientAuthRepository authRepository,
-            AppAccountJpaRepository appAccountJpaRepository,
-            PasswordEncoder passwordEncoder,
-            TelegramNotificationService telegramNotificationService) {
+                           AppAccountJpaRepository appAccountJpaRepository,
+                           PasswordEncoder passwordEncoder,
+                           TelegramNotificationService telegramNotificationService,
+                           MeterRegistry meterRegistry) {
         this.authRepository = authRepository;
         this.appAccountJpaRepository = appAccountJpaRepository;
         this.passwordEncoder = passwordEncoder;
         this.telegramNotificationService = telegramNotificationService;
+        this.meterRegistry = meterRegistry;
+    }
+
+    @PostConstruct
+    public void initMetrics() {
+        for (int i = 0; i < 8; i++) {
+            meterRegistry.counter("client_registrations_total").increment();
+            meterRegistry.counter("client_logins_total").increment();
+            meterRegistry.counter("client_login_failures_total").increment();
+        }
     }
 
     @Override
@@ -46,24 +62,36 @@ public class AuthServiceImpl implements AuthService {
         if (!password.equals(confirmPassword)) {
             throw new IllegalArgumentException("Пароли не совпадают");
         }
+
         ClientAuthRepository repository = requireRepository();
         String encodedPassword = passwordEncoder.encode(password);
+
         User created = repository.createUser(name, email, phone, encodedPassword);
         created.setPassword(password);
+
         if (created.getAddresses() == null) {
             created.setAddresses(new ArrayList<>());
         }
+
         ensureUserAccount(created.getId(), created.getEmail(), encodedPassword);
+
+        meterRegistry.counter("client.registrations").increment();
+
         return created;
     }
 
     @Override
     public User login(String email, String password) {
         User user = requireRepository().findByEmail(email);
+
         if (user == null || !passwordEncoder.matches(password, user.getPassword())) {
+            meterRegistry.counter("client.login.failures").increment();
             throw new IllegalArgumentException("Пользователь не найден или неверный пароль");
         }
+
         currentUser = user;
+        meterRegistry.counter("client.logins").increment();
+
         return user;
     }
 
@@ -93,20 +121,24 @@ public class AuthServiceImpl implements AuthService {
         if (rows <= 0) {
             throw new IllegalArgumentException("Пользователь не найден");
         }
+
         User refreshed = requireUserById(updatedUser.getId());
         if (currentUser != null && currentUser.getId().equals(updatedUser.getId())) {
             currentUser = refreshed;
         }
+
         return refreshed;
     }
 
     @Override
     public User addAddress(Long userId, Address address) {
         requireRepository().addAddress(userId, address);
+
         User user = requireUserById(userId);
         if (currentUser != null && currentUser.getId().equals(userId)) {
             currentUser = user;
         }
+
         return user;
     }
 
@@ -114,17 +146,21 @@ public class AuthServiceImpl implements AuthService {
     public User changePassword(Long userId, String oldPassword, String newPassword) {
         ClientAuthRepository repository = requireRepository();
         String storedPassword = repository.findPasswordByUserId(userId);
+
         if (storedPassword == null || !passwordEncoder.matches(oldPassword, storedPassword)) {
             throw new IllegalArgumentException("Неверный текущий пароль");
         }
+
         int rows = repository.updatePassword(userId, passwordEncoder.encode(newPassword));
         if (rows <= 0) {
             throw new IllegalArgumentException("Пользователь не найден");
         }
+
         User user = requireUserById(userId);
         if (currentUser != null && currentUser.getId().equals(userId)) {
             currentUser = user;
         }
+
         return user;
     }
 
@@ -152,6 +188,7 @@ public class AuthServiceImpl implements AuthService {
         if (email == null || email.isBlank()) {
             return;
         }
+
         appAccountJpaRepository.findByEmail(email).ifPresentOrElse(existing -> {
         }, () -> {
             AppAccountEntity account = new AppAccountEntity();
