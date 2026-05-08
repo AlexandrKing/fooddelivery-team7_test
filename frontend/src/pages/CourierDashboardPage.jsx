@@ -11,14 +11,6 @@ import {
 
 const TRANSACTION_PAGE_SIZE = 10;
 
-const COURIER_STATUSES = [
-  'ASSIGNED',
-  'PICKED_UP',
-  'DELIVERING',
-  'DELIVERED',
-  'CANCELLED',
-];
-
 const STATUS_LABELS = {
   ASSIGNED: 'Назначен',
   PICKED_UP: 'Забран',
@@ -26,6 +18,23 @@ const STATUS_LABELS = {
   DELIVERED: 'Доставлен',
   CANCELLED: 'Отменен',
 };
+
+const NEXT_COURIER_STATUS = {
+  CLAIMED: 'PICKED_UP',
+  ASSIGNED: 'PICKED_UP',
+  PICKED_UP: 'DELIVERING',
+  ON_THE_WAY: 'DELIVERED',
+  IN_DELIVERY: 'DELIVERED',
+  DELIVERING: 'DELIVERED',
+};
+
+function normalizeStatus(status) {
+  return String(status || '').trim().toUpperCase();
+}
+
+function getNextCourierStatus(status) {
+  return NEXT_COURIER_STATUS[normalizeStatus(status)] || null;
+}
 
 function asDate(value) {
   if (!value) return '—';
@@ -108,7 +117,10 @@ export default function CourierDashboardPage() {
     return () => window.clearInterval(id);
   }, [reloadLists]);
 
-  async function handleChangeStatus(orderId, nextStatus) {
+  async function handleChangeStatus(orderId, currentStatus, nextStatus) {
+    if (getNextCourierStatus(currentStatus) !== nextStatus) {
+      return;
+    }
     setUpdatingOrderId(orderId);
     setError('');
     setSuccessMessage('');
@@ -126,18 +138,7 @@ export default function CourierDashboardPage() {
             : item
         )
       );
-      if (nextStatus === 'DELIVERED') {
-        const [balanceData, transactionData, statsData] = await Promise.all([
-          fetchCourierBalance(),
-          fetchCourierTransactions({ page: 0, size: TRANSACTION_PAGE_SIZE }),
-          fetchCourierStats(),
-        ]);
-        setBalance(balanceData?.balance ?? 0);
-        setStats(statsData);
-        setTransactions(transactionData.content);
-        setTransactionPage(transactionData.page ?? 0);
-        setTransactionsLast(Boolean(transactionData.last));
-      }
+      await reloadLists();
       setSuccessMessage(`Статус заказа #${orderId} обновлен: ${STATUS_LABELS[nextStatus] || nextStatus}`);
     } catch (e) {
       setError(e?.message || 'Не удалось обновить статус доставки');
@@ -339,20 +340,32 @@ export default function CourierDashboardPage() {
                 <p className="order-card__line">
                   Доставлен: {asDate(item.deliveredAt ?? item.deliveryTime)}
                 </p>
-                <div className="order-card__actions">
-                  <select
-                    className="restaurant-status-select"
-                    value={item.status || 'ASSIGNED'}
-                    onChange={(e) => handleChangeStatus(item.orderId, e.target.value)}
-                    disabled={updatingOrderId === item.orderId}
-                  >
-                    {COURIER_STATUSES.map((s) => (
-                      <option key={s} value={s}>
-                        {STATUS_LABELS[s] || s}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                {(() => {
+                  const nextStatus = getNextCourierStatus(item.status);
+
+                  if (!nextStatus) {
+                    return (
+                      <div className="order-card__actions">
+                        <span className="badge">Доставлен</span>
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <div className="order-card__actions">
+                      <button
+                        type="button"
+                        className="filters-form__btn"
+                        onClick={() => handleChangeStatus(item.orderId, item.status, nextStatus)}
+                        disabled={updatingOrderId === item.orderId}
+                      >
+                        {updatingOrderId === item.orderId
+                          ? 'Обновление…'
+                          : `Перевести в статус: ${STATUS_LABELS[nextStatus] || nextStatus}`}
+                      </button>
+                    </div>
+                  );
+                })()}
               </li>
             ))}
           </ul>
