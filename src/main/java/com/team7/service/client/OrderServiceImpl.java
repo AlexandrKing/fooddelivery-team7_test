@@ -4,6 +4,7 @@ import com.team7.model.client.*;
 import com.team7.persistence.CourierAssignedOrderJpaRepository;
 import com.team7.persistence.entity.CourierAssignedOrderEntity;
 import com.team7.repository.client.OrderRepository;
+import com.team7.service.telegramnotificationservice.OrderNotificationService;
 import io.micrometer.core.instrument.MeterRegistry;
 import jakarta.annotation.PostConstruct;
 import org.springframework.stereotype.Service;
@@ -19,17 +20,20 @@ public class OrderServiceImpl implements OrderService {
     private final OrderRepository orderRepository;
     private final CourierAssignedOrderJpaRepository courierAssignedOrderJpaRepository;
     private final MeterRegistry meterRegistry;
+    private final OrderNotificationService orderNotificationService;
 
     public OrderServiceImpl(
             CartService cartService,
             OrderRepository orderRepository,
             CourierAssignedOrderJpaRepository courierAssignedOrderJpaRepository,
-            MeterRegistry meterRegistry
+            MeterRegistry meterRegistry,
+            OrderNotificationService orderNotificationService
     ) {
         this.cartService = cartService;
         this.orderRepository = orderRepository;
         this.courierAssignedOrderJpaRepository = courierAssignedOrderJpaRepository;
         this.meterRegistry = meterRegistry;
+        this.orderNotificationService = orderNotificationService;
     }
 
     @PostConstruct
@@ -75,6 +79,8 @@ public class OrderServiceImpl implements OrderService {
         order.setTotalAmount(cart.getTotalAmount());
 
         meterRegistry.counter("orders.created").increment();
+
+        orderNotificationService.sendOrderCreated(userId, created.getOrderId());
 
         return order;
     }

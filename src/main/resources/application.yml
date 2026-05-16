@@ -25,6 +25,9 @@ spring:
         authCodeProducer-out-0:
           destination: auth-codes-topic
           content-type: application/json
+        orderStatusProducer-out-0:
+          destination: order-status-topic
+          content-type: application/json
       kafka:
         binder:
           brokers: ${KAFKA_BROKERS:localhost:9092}

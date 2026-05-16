@@ -50,3 +50,17 @@ export async function updateUserProfile(profile) {
   }
   return data;
 }
+
+export async function updateTelegramChatId(telegramChatId) {
+  const data = await fetchApiSuccess('/api/users/me/telegram-chat-id', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      telegramChatId,
+    }),
+  });
+  if (data == null || typeof data !== 'object' || Array.isArray(data)) {
+    throw new Error('Ожидался объект профиля пользователя в data');
+  }
+  return data;
+}

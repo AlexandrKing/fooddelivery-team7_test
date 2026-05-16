@@ -1,11 +1,17 @@
 import { useEffect, useState } from 'react';
-import { fetchUserProfile, updateUserProfile } from '../services/userApi.js';
+import {
+  fetchUserProfile,
+  updateTelegramChatId,
+  updateUserProfile,
+} from '../services/userApi.js';
 
 export default function UserProfilePage() {
   const [status, setStatus] = useState('loading');
   const [saving, setSaving] = useState(false);
+  const [savingTelegram, setSavingTelegram] = useState(false);
   const [profile, setProfile] = useState(null);
   const [form, setForm] = useState({ fullName: '', phone: '' });
+  const [telegramChatId, setTelegramChatId] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
@@ -23,6 +29,7 @@ export default function UserProfilePage() {
           fullName: data.fullName || '',
           phone: data.phone || '',
         });
+        setTelegramChatId(data.telegramChatId || '');
         setStatus('success');
       } catch (e) {
         if (cancelled) return;
@@ -49,11 +56,29 @@ export default function UserProfilePage() {
         fullName: updated.fullName || '',
         phone: updated.phone || '',
       });
+      setTelegramChatId(updated.telegramChatId || '');
       setSuccess('Профиль обновлен');
     } catch (err) {
       setError(err?.message || 'Не удалось обновить профиль');
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handleTelegramSubmit(e) {
+    e.preventDefault();
+    setSavingTelegram(true);
+    setError('');
+    setSuccess('');
+    try {
+      const updated = await updateTelegramChatId(telegramChatId);
+      setProfile(updated);
+      setTelegramChatId(updated.telegramChatId || '');
+      setSuccess('Telegram Chat ID сохранён');
+    } catch (err) {
+      setError(err?.message || 'Не удалось сохранить Telegram Chat ID');
+    } finally {
+      setSavingTelegram(false);
     }
   }
 
@@ -110,6 +135,29 @@ export default function UserProfilePage() {
               </button>
             </div>
           </form>
+
+          <form className="filters-form" onSubmit={handleTelegramSubmit}>
+            <label className="filters-form__field">
+              Telegram Chat ID
+              <input
+                type="text"
+                inputMode="numeric"
+                placeholder="Например: 123456789"
+                value={telegramChatId}
+                onChange={(e) => setTelegramChatId(e.target.value)}
+                disabled={savingTelegram}
+              />
+            </label>
+            <div className="filters-form__actions">
+              <button type="submit" className="filters-form__btn" disabled={savingTelegram}>
+                {savingTelegram ? 'Сохранение...' : 'Сохранить Telegram Chat ID'}
+              </button>
+            </div>
+          </form>
+
+          <p className="state state--empty">
+            Чтобы узнать Chat ID, напишите вашему Telegram-боту команду /info и скопируйте значение Chat ID сюда.
+          </p>
 
           <h3>Адреса</h3>
           {profile.addresses?.length > 0 ? (

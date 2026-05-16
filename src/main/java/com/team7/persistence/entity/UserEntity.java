@@ -30,6 +30,9 @@ public class UserEntity {
   @Column(name = "phone", nullable = false, unique = true)
   private String phone;
 
+  @Column(name = "telegram_chat_id")
+  private String telegramChatId;
+
   @Column(name = "is_active")
   private Boolean isActive;
 
@@ -77,6 +80,13 @@ public class UserEntity {
 
   public void setPhone(String phone) {
     this.phone = phone;
+  }
+
+  public String getTelegramChatId() {
+      return telegramChatId;
+  }
+  public void setTelegramChatId(String telegramChatId) {
+      this.telegramChatId = telegramChatId;
   }
 
   public Boolean getIsActive() {

@@ -15,6 +15,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import com.team7.service.telegramnotificationservice.OrderNotificationService;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -36,17 +37,20 @@ class OrderServiceImplTest {
   private OrderRepository orderRepository;
   @Mock
   private CourierAssignedOrderJpaRepository courierAssignedOrderJpaRepository;
+  @Mock
+  private OrderNotificationService orderNotificationService;
 
   private OrderServiceImpl service;
 
   @BeforeEach
   void setUp() {
-    service = new OrderServiceImpl(
-        cartService,
-        orderRepository,
-        courierAssignedOrderJpaRepository,
-        new SimpleMeterRegistry()
-    );
+      service = new OrderServiceImpl(
+              cartService,
+              orderRepository,
+              courierAssignedOrderJpaRepository,
+              new SimpleMeterRegistry(),
+              orderNotificationService
+      );
   }
 
   @Test
