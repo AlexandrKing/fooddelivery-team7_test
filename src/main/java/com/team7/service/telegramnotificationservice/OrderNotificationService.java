@@ -8,10 +8,16 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.stream.function.StreamBridge;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class OrderNotificationService {
+
+    private static final DateTimeFormatter DATE_TIME_FORMATTER =
+            DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm");
 
     private final StreamBridge streamBridge;
     private final UserJpaRepository userJpaRepository;
@@ -21,34 +27,73 @@ public class OrderNotificationService {
                 userId,
                 null,
                 "TELEGRAM_CONNECTED",
-                "✅ Telegram подключён к вашему аккаунту. Теперь вы будете получать уведомления о заказах."
+                "Telegram подключен к вашему аккаунту. Теперь вы будете получать уведомления о заказах."
         );
     }
 
-    public void sendOrderCreated(Long userId, Long orderId) {
+    public void sendOrderCreated(Long userId, Long orderId, LocalDateTime createdAt, String restaurantName) {
+        String message = String.format(
+                "Ваш заказ №%d создан.%n" +
+                        "Ресторан: %s%n" +
+                        "Время создания: %s%n" +
+                        "Статус: ожидает обработки.",
+                orderId,
+                safeText(restaurantName, "не указан"),
+                formatDateTime(createdAt)
+        );
+
         send(
                 userId,
                 orderId,
                 "CREATED",
-                "✅ Ваш заказ №" + orderId + " создан и ожидает обработки."
+                message
         );
     }
 
-    public void sendOrderAcceptedForDelivery(Long userId, Long orderId) {
+    public void sendOrderAcceptedForDelivery(Long userId, Long orderId, String courierName) {
+        String message = String.format(
+                "Ваш заказ №%d принят в доставку.%n" +
+                        "Ваш курьер: %s.",
+                orderId,
+                safeText(courierName, "не указан")
+        );
+
         send(
                 userId,
                 orderId,
                 "ACCEPTED_FOR_DELIVERY",
-                "🚚 Ваш заказ №" + orderId + " принят курьером в доставку."
+                message
         );
     }
 
-    public void sendOrderDelivered(Long userId, Long orderId) {
+    public void sendOrderPickedUp(Long userId, Long orderId) {
+        String message = String.format(
+                "Ваш заказ №%d забран курьером.%n" +
+                        "Курьер уже направляется к вам.",
+                orderId
+        );
+
+        send(
+                userId,
+                orderId,
+                "PICKED_UP",
+                message
+        );
+    }
+
+    public void sendOrderDelivered(Long userId, Long orderId, LocalDateTime deliveredAt) {
+        String message = String.format(
+                "Ваш заказ №%d доставлен.%n" +
+                        "Время доставки: %s.",
+                orderId,
+                formatDateTime(deliveredAt)
+        );
+
         send(
                 userId,
                 orderId,
                 "DELIVERED",
-                "🎉 Ваш заказ №" + orderId + " доставлен. Приятного аппетита!"
+                message
         );
     }
 
@@ -93,5 +138,19 @@ public class OrderNotificationService {
                     userId, orderId, status, e.getMessage()
             );
         }
+    }
+
+    private static String formatDateTime(LocalDateTime dateTime) {
+        if (dateTime == null) {
+            return "не указано";
+        }
+        return dateTime.format(DATE_TIME_FORMATTER);
+    }
+
+    private static String safeText(String value, String fallback) {
+        if (value == null || value.isBlank()) {
+            return fallback;
+        }
+        return value.trim();
     }
 }

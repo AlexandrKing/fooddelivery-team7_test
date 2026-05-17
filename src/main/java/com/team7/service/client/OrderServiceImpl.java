@@ -2,6 +2,7 @@ package com.team7.service.client;
 
 import com.team7.model.client.*;
 import com.team7.persistence.CourierAssignedOrderJpaRepository;
+import com.team7.persistence.RestaurantJpaRepository;
 import com.team7.persistence.entity.CourierAssignedOrderEntity;
 import com.team7.repository.client.OrderRepository;
 import com.team7.service.telegramnotificationservice.OrderNotificationService;
@@ -19,6 +20,7 @@ public class OrderServiceImpl implements OrderService {
     private final CartService cartService;
     private final OrderRepository orderRepository;
     private final CourierAssignedOrderJpaRepository courierAssignedOrderJpaRepository;
+    private final RestaurantJpaRepository restaurantJpaRepository;
     private final MeterRegistry meterRegistry;
     private final OrderNotificationService orderNotificationService;
 
@@ -26,12 +28,14 @@ public class OrderServiceImpl implements OrderService {
             CartService cartService,
             OrderRepository orderRepository,
             CourierAssignedOrderJpaRepository courierAssignedOrderJpaRepository,
+            RestaurantJpaRepository restaurantJpaRepository,
             MeterRegistry meterRegistry,
             OrderNotificationService orderNotificationService
     ) {
         this.cartService = cartService;
         this.orderRepository = orderRepository;
         this.courierAssignedOrderJpaRepository = courierAssignedOrderJpaRepository;
+        this.restaurantJpaRepository = restaurantJpaRepository;
         this.meterRegistry = meterRegistry;
         this.orderNotificationService = orderNotificationService;
     }
@@ -80,7 +84,16 @@ public class OrderServiceImpl implements OrderService {
 
         meterRegistry.counter("orders.created").increment();
 
-        orderNotificationService.sendOrderCreated(userId, created.getOrderId());
+        String restaurantName = restaurantJpaRepository.findById(restaurantId)
+                .map(restaurant -> restaurant.getName())
+                .orElse("не указан");
+
+        orderNotificationService.sendOrderCreated(
+                userId,
+                created.getOrderId(),
+                created.getCreatedAt(),
+                restaurantName
+        );
 
         return order;
     }

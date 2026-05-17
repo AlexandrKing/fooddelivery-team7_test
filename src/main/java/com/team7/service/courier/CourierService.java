@@ -107,9 +107,14 @@ public class CourierService {
 
         CourierAssignedOrderEntity saved = courierAssignedOrderJpaRepository.save(assignment);
 
+        String courierName = courierUserJpaRepository.findById(courierId)
+                .map(CourierService::formatCourierName)
+                .orElse("не указан");
+
         orderNotificationService.sendOrderAcceptedForDelivery(
                 order.getUserId(),
-                orderId
+                orderId,
+                courierName
         );
 
         return saved;
@@ -134,8 +139,11 @@ public class CourierService {
         String nextStatus = OrderStatusTransitionPolicy.validateCourierTransition(assignment.getStatus(), status);
         assignment.setStatus(nextStatus);
 
+        boolean shouldNotifyPickedUp = false;
+
         if ("PICKED_UP".equals(nextStatus)) {
             assignment.setPickedUpAt(LocalDateTime.now());
+            shouldNotifyPickedUp = !"PICKED_UP".equals(previousStatus);
         }
 
         if ("DELIVERED".equals(nextStatus)) {
@@ -150,12 +158,17 @@ public class CourierService {
         order.setStatus(nextStatus);
         orderJpaRepository.save(order);
 
+        if (shouldNotifyPickedUp) {
+            orderNotificationService.sendOrderPickedUp(order.getUserId(), orderId);
+        }
+
         if (!"DELIVERED".equals(previousStatus) && "DELIVERED".equals(nextStatus)) {
             accrueDeliveryFee(courierId, orderId);
 
             orderNotificationService.sendOrderDelivered(
                     order.getUserId(),
-                    orderId
+                    orderId,
+                    saved.getDeliveryTime()
             );
         }
 
@@ -184,6 +197,18 @@ public class CourierService {
         transaction.setCreatedAt(LocalDateTime.now());
 
         courierTransactionJpaRepository.save(transaction);
+    }
+
+    private static String formatCourierName(CourierUserEntity courier) {
+        if (courier.getFullName() != null && !courier.getFullName().isBlank()) {
+            return courier.getFullName().trim();
+        }
+
+        if (courier.getUsername() != null && !courier.getUsername().isBlank()) {
+            return courier.getUsername().trim();
+        }
+
+        return "не указан";
     }
 
     public record CourierStats(BigDecimal balance, BigDecimal earnedToday, BigDecimal earnedThisWeek) {
